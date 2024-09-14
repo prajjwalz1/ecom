@@ -1,0 +1,46 @@
+venv
+db.sqlite3
+.env
+.pyc
+migrations
+
+__pycache__/
+*.py[cod]
+
+# Django local settings
+local_settings.py
+
+# Secret key
+*.secret_key
+
+# SQLite database file
+*.sqlite3
+
+# Media files
+media/
+
+# Static files
+staticfiles/
+
+# IDE-specific files and directories
+.idea/
+.vscode/
+*.sublime-workspace
+
+# Compiled Python bytecode
+*.pyc
+
+# Log files
+*.log
+
+# Temporary files
+*.bak
+*.swp
+
+# Dependency directories
+venv/
+static
+__pycache__
+
+
+development.py

@@ -40,15 +40,28 @@ class HomeView(ResponseMixin,APIView):
         images=CarouselImage.objects.all()
         serializer=CarouselImageSerializer(images,many=True,context={"request":request})
         return serializer.data
-    def AllTaggedProduct(self,request):
-        tag=Tag.objects.prefetch_related('products','products__brand','products__category','products__images').all()
-        serializer=MultiTagSerializer(tag,many=True,context={"request":request})
-        data=serializer.data[0]
-        # breakpoint()
-        data["navbar"]=self.getnavbar(request)
-        data["carousel"]=self.get_carousel_images(request)
-        return self.handle_success_response(message="products fteched successfully",serialized_data=data,status_code=200)
-        
+    def AllTaggedProduct(self, request):
+        # Fetch all tags with related products
+        tag=Tag.objects.prefetch_related('products','products__brand','products__category','products__images').all()        
+        # Serialize the tags with their related products
+        serializer = TagSerializer(tag, many=True,context={"request":request})
+        serialized_data = serializer.data
+
+        # Transform the serialized data into the desired format
+        data = {}
+        for tag in serialized_data:
+            tag_name = tag['name']
+            products = tag['products']
+            data[tag_name] = products
+
+        # Structure the final response
+        response_data = {
+            'products': data,
+            'navbar': self.getnavbar(request),
+            'carousel': self.get_carousel_images(request),
+        }
+
+        return self.handle_success_response(serialized_data=response_data,status_code=200)
 
 
 class CarouselAPI(ResponseMixin,APIView):

@@ -47,25 +47,6 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 
-class MultiTagSerializer(serializers.ModelSerializer):
-    products = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Tag
-        fields = ['products']
-
-    def get_products(self, obj):
-        # Assuming you have a relationship set up from Tag to Product
-        products = obj.products.all()
-        grouped_products = {}
-
-        for product in products:
-            tag_name = obj.name  # Tag name for grouping
-            if tag_name not in grouped_products:
-                grouped_products[tag_name] = []
-            grouped_products[tag_name].append(ProductSerializer(product,context=self.context).data)
-        
-        return grouped_products
     
 class CarouselImageSerializer(serializers.ModelSerializer):
     class Meta:

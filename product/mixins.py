@@ -37,6 +37,7 @@ class CustomizedModel(models.Model):
             self.save()
 
     class Meta:
+        ordering = ['created_at'] 
         abstract = True
         indexes = [
             models.Index(fields=['deleted_at']),

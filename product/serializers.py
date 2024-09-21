@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Tag,Product,Category,Brand,ProductImage,CarouselImage,Navbar
+from .models import *
 
 class TaggedProductSerializer(serializers.Serializer):
     tag = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all())
@@ -12,7 +12,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Brand
-        fields = ['id', 'name', 'description']  # Include fields you want to display
+        fields = ['id', 'name', 'description','image']  # Include fields you want to display
 
 class ProductImageSerializer(serializers.ModelSerializer):
     image=serializers.SerializerMethodField()
@@ -83,3 +83,37 @@ class NavbarSerializer(serializers.ModelSerializer):
         # Get only the parent categories (where parent_category is None)
         parent_categories = obj.category.filter(parent_category__isnull=True)
         return ParentCategorySerializer(parent_categories, many=True).data
+    
+
+class ProductDetailSerializer(serializers.ModelSerializer):
+    category = CategorySerializer(read_only=True)
+    brand = BrandSerializer(read_only=True)
+    images = ProductImageSerializer(many=True, read_only=True)
+    specifications = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = ['id', 'product_name', 'specifications', 'product_description', 'images', 'category', 'brand', 'price', 'discount_price', 'stock']
+
+    def get_specifications(self, obj):
+        # Fetch all category-level specifications
+        category_specifications = Specification.objects.filter(category=obj.category)
+        
+        # Fetch product-specific specifications
+        product_specifications = ProductSpecification.objects.filter(product=obj)
+
+        # Create a dictionary for easier lookup
+        product_spec_map = {ps.spec_name.id: ps for ps in product_specifications}
+
+        # Build the final list of specifications
+        result = []
+        for category_spec in category_specifications:
+            product_spec = product_spec_map.get(category_spec.id)
+
+            result.append({
+                'spec_name': category_spec.spec_name,  # Directly use the spec_name field
+                'value': product_spec.value if product_spec else None,  # Use product value or placeholder
+                'value_unit': product_spec.value_unit if product_spec else None  # Placeholder if unit not available
+            })
+        
+        return result

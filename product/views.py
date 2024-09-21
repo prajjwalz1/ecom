@@ -64,9 +64,20 @@ class HomeView(ResponseMixin,APIView):
         return self.handle_success_response(serialized_data=response_data,status_code=200)
 
 
-class CarouselAPI(ResponseMixin,APIView):
+class ProductDetailView(ResponseMixin,APIView,GetSingleObjectMixin):
+
+    def get(self,request):
+        request_type=request.GET.get("request")
+        product_id=request.GET.get("product_id")
+        if request_type=="get_product_detail":
+            return self.get_product_detail(request,product_id)
+        else:
+            return self.handle_error_response(error_message="request is not valid",status_code=400)
     
-    def get_images(self,request):
-        images=CarouselImage.objects.all()
-        serializer=CarouselImageSerializer(images,many=True,context={"request":request})
-        return self.handle_success_response(status_code=200,serialized_data=serializer.data,message="carousel images fetched successfully")
+    def get_product_detail(self,request,id):
+        query={"id":id}
+        obj,error=self.get_object(Product,**query)
+        # breakpoint()
+        serializer=ProductDetailSerializer(obj,context={"request":request})
+        return self.handle_success_response(serialized_data=serializer.data,status_code=200)
+        breakpoint()

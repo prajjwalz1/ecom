@@ -39,7 +39,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'product',
-    'rest_framework'
+    'rest_framework',
+    'ckeditor',
+    'ckeditor_uploader',
+
+
 ]
 
 MIDDLEWARE = [
@@ -133,3 +137,53 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+#logging
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'INFO',  # Log INFO level and above to the console
+            'class': 'logging.StreamHandler',
+        },
+        'file': {
+            'level': 'DEBUG',  # Log everything to a file for debugging
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',  # Only show INFO level and above from Django
+            'propagate': True,
+        },
+        'product': {
+            'handlers': ['console', 'file'],  # Log to both console and file
+            'level': 'DEBUG',  # Log debug information from 'product'
+            'propagate': False,  # Prevent logs from propagating to higher loggers
+        },
+    },
+}
+
+
+CKEDITOR_UPLOAD_PATH = "uploads/"
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'Custom',
+        'toolbar_Custom': [
+            ['Bold', 'Italic', 'Underline'],
+            ['NumberedList', 'BulletedList'],
+            ['Link', 'Unlink'],
+            ['Image','video', 'Table', 'HorizontalRule'],
+            ['Source'],
+        ],
+        'height': 300,
+        'filebrowserUploadUrl': '/ckeditor/upload/',  # URL for file uploads
+        'filebrowserImageUploadUrl': '/ckeditor/upload/',  # URL for image uploads
+    },
+}

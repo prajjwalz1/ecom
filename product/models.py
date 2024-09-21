@@ -1,5 +1,7 @@
 from django.db import models
 from .mixins import CustomizedModel
+from ckeditor.fields import RichTextField
+
 # Create your models here.
 import logging
 logger = logging.getLogger(__name__)
@@ -17,6 +19,7 @@ class Category(CustomizedModel):
 # Brand Model
 class Brand(CustomizedModel):
     name = models.CharField(max_length=255)
+    image=models.ImageField(upload_to="Brands",null=True)
     description = models.TextField(blank=True)
 
     def __str__(self):
@@ -32,15 +35,11 @@ class Tag(CustomizedModel):
 
 
 class Specification(CustomizedModel):
-    spec_name = models.CharField(max_length=200, null=False, blank=False)
+    spec_name = models.CharField(max_length=255)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE,null=True)
 
     def __str__(self):
-        return self.spec_name
-
-    def save(self, *args, **kwargs):
-        logger.info(f"Saving Specification: {self.spec_name}")
-        super().save(*args, **kwargs)
-
+        return f"{self.spec_name} "
 
 class Product(CustomizedModel):
     product_name=models.CharField(max_length=255,null=False,blank=True)
@@ -51,6 +50,7 @@ class Product(CustomizedModel):
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     stock = models.IntegerField()
     tags = models.ManyToManyField(Tag, blank=True, related_name='products')
+    details= RichTextField(null=True,blank=True) 
 
     def __str__(self) -> str:
         return self.product_name
@@ -70,9 +70,11 @@ class ProductImage(CustomizedModel):
     
 
 class ProductSpecification(CustomizedModel):
-    product=models.ForeignKey(Product,on_delete=models.DO_NOTHING)
-    spec_name=models.ForeignKey(Specification,on_delete=models.DO_NOTHING)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='specifications')
+    spec_name=models.ForeignKey(Specification,on_delete=models.CASCADE)
     value=models.CharField(max_length=255,null=True,blank=True)
+    value_unit=models.CharField(max_length=255,null=True,blank=True)
+    
     
     def __str__(self) -> str:
         return f"{self.product.product_name} - {self.spec_name.spec_name}: {self.value}"

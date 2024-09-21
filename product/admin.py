@@ -50,10 +50,28 @@ class ProductAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('product_name', 'product_description', 'category', 'brand', 'price', 'discount_price', 'stock', 'tags')
+            'fields': (
+                'product_name', 
+                'product_description', 
+                'category', 
+                'brand', 
+                'price', 
+                'discount_price', 
+                'stock', 
+                'tags',
+                'details'  # Added for RichTextField if you have it
+            )
         }),
     )
 
+    def get_queryset(self, request):
+        # Optionally customize the queryset for better performance or filtering
+        return super().get_queryset(request).select_related('category', 'brand')
+
+    def save_model(self, request, obj, form, change):
+        # Custom save behavior, logging, or validation can be added here
+        logger.info(f"Admin saving Product: {obj.product_name}")
+        super().save_model(request, obj, form, change)
 
 @admin.register(ProductSpecification)
 class ProductSpecificationAdmin(admin.ModelAdmin):
@@ -80,3 +98,6 @@ class NavbarAdmin(admin.ModelAdmin):
     list_display = ['name']
     search_fields = ['name']
     filter_horizontal = ['category']  # ManyToMany field to display categories
+
+
+

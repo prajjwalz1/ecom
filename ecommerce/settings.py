@@ -142,6 +142,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 #logging
 
+LOGGING_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'debug.log')
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -153,7 +155,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',  # Log everything to a file for debugging
             'class': 'logging.FileHandler',
-            'filename': 'debug.log',
+            'filename': LOGGING_FILE_PATH,  # Use the defined path
         },
     },
     'loggers': {
@@ -169,7 +171,6 @@ LOGGING = {
         },
     },
 }
-
 
 CKEDITOR_UPLOAD_PATH = "uploads/"
 CKEDITOR_CONFIGS = {

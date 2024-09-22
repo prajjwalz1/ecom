@@ -42,7 +42,7 @@ class HomeView(ResponseMixin,APIView):
         return serializer.data
     def AllTaggedProduct(self, request):
         # Fetch all tags with related products
-        tags = Tag.objects.prefetch_related('products', 'products__brand', 'products__category', 'products__images').all().order_by('-created_at')[:8]
+        tags = Tag.objects.prefetch_related('products', 'products__brand', 'products__category', 'products__images').all().order_by('priority','-last_modified',)[:8]
 
         # Serialize the tags with their related products
         serializer = TagSerializer(tags, many=True, context={"request": request})

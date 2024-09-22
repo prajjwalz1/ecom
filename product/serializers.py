@@ -36,6 +36,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['id', 'product_name', 'product_description','images', 'category', 'brand', 'price', 'discount_price', 'stock']
+    
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -43,11 +44,12 @@ class TagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tag
-        fields = ['id', 'name', 'products']
+        fields = ['id', 'name', 'products','section']
 
     def get_products(self, obj):
         # Fetch only the first 8 products related to the tag
-        products = obj.products.all().order_by('-created_at')[:8]
+        
+        products = obj.products.all()
         return ProductSerializer(products, many=True,context=self.context).data
 
 

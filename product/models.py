@@ -27,7 +27,9 @@ class Brand(CustomizedModel):
 
 # Tag Model
 class Tag(CustomizedModel):
+    section_choices=(('primary_section','Primary Section'),('secondary_section','Secondary Section'))
     name = models.CharField(max_length=50)
+    section=models.CharField(choices=section_choices,null=True)
 
     def __str__(self):
         return self.name

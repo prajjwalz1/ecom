@@ -42,11 +42,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'ckeditor',
     'ckeditor_uploader',
+    'debug_toolbar',
 
 
 ]
 
 MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -54,8 +56,12 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]
 
+]
+INTERNAL_IPS = [
+    # Loopback IP for local development
+    '127.0.0.1',
+]
 ROOT_URLCONF = 'ecommerce.urls'
 
 TEMPLATES = [
@@ -149,28 +155,25 @@ LOGGING = {
     'disable_existing_loggers': False,
     'handlers': {
         'console': {
-            'level': 'INFO',  # Log INFO level and above to the console
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
         },
         'file': {
-            'level': 'DEBUG',  # Log everything to a file for debugging
+            'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': LOGGING_FILE_PATH,  # Use the defined path
+            'filename': 'db_queries.log',  # Log queries to this file
         },
     },
     'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',  # Only show INFO level and above from Django
-            'propagate': True,
-        },
-        'product': {
+        'django.db.backends': {
             'handlers': ['console', 'file'],  # Log to both console and file
-            'level': 'DEBUG',  # Log debug information from 'product'
-            'propagate': False,  # Prevent logs from propagating to higher loggers
+            'level': 'DEBUG',
+            'propagate': False,
         },
     },
 }
+
+
 
 CKEDITOR_UPLOAD_PATH = "uploads/"
 CKEDITOR_CONFIGS = {

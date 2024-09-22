@@ -42,26 +42,41 @@ class HomeView(ResponseMixin,APIView):
         return serializer.data
     def AllTaggedProduct(self, request):
         # Fetch all tags with related products
-        tag=Tag.objects.prefetch_related('products','products__brand','products__category','products__images').all()        
+        tags = Tag.objects.prefetch_related('products', 'products__brand', 'products__category', 'products__images').all().order_by('-created_at')[:8]
+
         # Serialize the tags with their related products
-        serializer = TagSerializer(tag, many=True,context={"request":request})
+        serializer = TagSerializer(tags, many=True, context={"request": request})
         serialized_data = serializer.data
 
         # Transform the serialized data into the desired format
         data = {}
+        # return Response(serialized_data)
         for tag in serialized_data:
-            tag_name = tag['name']
+            section_name = tag['section']  # Get the section for the tag
+            tag_name = tag['name']  # Get the tag name
             products = tag['products']
-            data[tag_name] = products
+
+            if section_name not in data:
+                # If the section doesn't exist, initialize it with a new dictionary for tags
+                data[section_name] = {
+                    tag_name: products  # Initialize the tag with its products
+                }
+            else:
+                # If the section exists, add the tag and products to it
+                if tag_name not in data[section_name]:
+                    data[section_name][tag_name] = products
+                else:
+                    # If the tag already exists in the section, extend its products list
+                    data[section_name][tag_name].extend(products)
 
         # Structure the final response
         response_data = {
-            'products': data,
+            'section_wise_product': data,
             'navbar': self.getnavbar(request),
             'carousel': self.get_carousel_images(request),
         }
 
-        return self.handle_success_response(serialized_data=response_data,status_code=200)
+        return self.handle_success_response(serialized_data=response_data, status_code=200)
 
 
 class ProductDetailView(ResponseMixin,APIView,GetSingleObjectMixin):
@@ -94,3 +109,14 @@ class BrandView(ResponseMixin,APIView):
         qs=Brand.objects.all()
         serializer=BrandSerializer(qs,context={"request":request},many=True)
         return self.handle_success_response(serialized_data=serializer.data,message="brands retrieved successfully",status_code=200)
+    
+class CategoryWiseProduct(APIView,ResponseMixin):
+    def get(self,request):
+        request_type=request.GET.get("request")
+        if request_type=="category_wise_product":
+            return self.CategoryWiseProduct(request)
+        else:
+            return self.handle_error_response(error_message="bad request",status_code=400)
+    def CategoryWiseProduct(self,request):
+        category_id=request.GET.get("category_id")
+        obj=Product.objects.filter(Category__id=category_id).select_related("category")

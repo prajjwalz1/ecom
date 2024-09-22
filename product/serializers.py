@@ -93,7 +93,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'product_name', 'specifications', 'product_description', 'images', 'category', 'brand', 'price', 'discount_price', 'stock']
+        fields = ['id', 'product_name','details', 'specifications', 'product_description', 'images', 'category', 'brand', 'price', 'discount_price', 'stock']
 
     def get_specifications(self, obj):
         # Fetch all category-level specifications
@@ -117,3 +117,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             })
         
         return result
+    
+
+class BrandSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=Brand
+        fields="__all__"

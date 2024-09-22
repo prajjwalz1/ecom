@@ -81,3 +81,16 @@ class ProductDetailView(ResponseMixin,APIView,GetSingleObjectMixin):
         serializer=ProductDetailSerializer(obj,context={"request":request})
         return self.handle_success_response(serialized_data=serializer.data,status_code=200)
         breakpoint()
+
+class BrandView(ResponseMixin,APIView):
+    def get(self,request):
+        request_type=request.GET.get("request")
+        if request_type=="get_all_brands":
+            return self.AllBrands(request)
+        else:
+            return self.handle_error_response(error_message="bad request",status_code=400)
+    
+    def AllBrands(self,request):
+        qs=Brand.objects.all()
+        serializer=BrandSerializer(qs,context={"request":request},many=True)
+        return self.handle_success_response(serialized_data=serializer.data,message="brands retrieved successfully",status_code=200)

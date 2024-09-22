@@ -18,19 +18,19 @@ class HomeView(ResponseMixin,APIView):
             return self.AllTaggedProduct(request)
         else:
             return self.handle_error_response(error_message="bad request",status_code=400)
-    def TaggedProduct(self,request):
-        tag=request.data.get("tag")
-        data={
-            "tag":tag
-        }
-        serializer=TaggedProductSerializer(data=data)
-        if serializer.is_valid():
-            obj=Tag.objects.prefetch_related('products__brand','products__category').get(id=tag)
-            serializer=TagSerializer(obj,context={"request":request})
-            return self.handle_success_response(message="products fteched successfully",serialized_data=serializer.data,status_code=200)
+    # def TaggedProduct(self,request):
+    #     tag=request.data.get("tag")
+    #     data={
+    #         "tag":tag
+    #     }
+    #     serializer=TaggedProductSerializer(data=data)
+    #     if serializer.is_valid():
+    #         obj=Tag.objects.prefetch_related('products__brand','products__category').get(id=tag)
+    #         serializer=TagSerializer(obj,context={"request":request})
+    #         return self.handle_success_response(message="products fteched successfully",serialized_data=serializer.data,status_code=200)
         
-        else:
-            return self.handle_serializererror_response(error_messages=serializer.errors,status_code=400)
+    #     else:
+    #         return self.handle_serializererror_response(error_messages=serializer.errors,status_code=400)
 
     def getnavbar(self,request):
         obj=Navbar.objects.prefetch_related('category').all()

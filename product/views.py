@@ -106,14 +106,34 @@ class CategoryWiseProduct(APIView,ResponseMixin):
             return self.CategoryWiseProduct(request)
         else:
             return self.handle_error_response(error_message="bad request",status_code=400)
-    def CategoryWiseProduct(self,request):
-        category_id=request.GET.get("category_id")
-        print(category_id)
-        obj=Product.objects.filter(category=category_id).select_related('brand').prefetch_related("images")
-        serializer=ProductSerializer(obj,many=True,context={"request":request})
-        return self.handle_success_response(serialized_data=serializer.data,status_code=200,message="products fetched successfully")
-        # breakpoint()
+    def CategoryWiseProduct(self, request):
+        category_id = request.GET.get("category_id")
+        
+        try:
+            # Get the main category
+            main_category = Category.objects.get(id=category_id)
+            print(main_category)
+            # Get IDs of the main category and its child categories
+            child_category_ids = Category.objects.filter(parent_category=main_category).values_list('id', flat=True)
+            category_ids = list(child_category_ids) + [main_category.id]  # Include the main category ID
+            print(child_category_ids)
+            # Fetch products based on the category IDs
+            products = Product.objects.filter(category_id__in=category_ids).select_related('brand').prefetch_related("images")
 
+            serializer = ProductSerializer(products, many=True, context={"request": request})
+
+            return self.handle_success_response(
+                serialized_data=serializer.data,
+                status_code=200,
+                message="Products fetched successfully"
+            )
+
+        except Category.DoesNotExist:
+            return self.handle_success_response(
+                serialized_data=[],
+                status_code=404,
+                message="Category not found"
+            )
 
 class SearchProduct(APIView,ResponseMixin):
     def get(self,request):

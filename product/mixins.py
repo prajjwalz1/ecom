@@ -76,8 +76,31 @@ class ResponseMixin:
             response,
             status=status_code,
         )
+    def handle_paginated_response(self, status_code, serialized_data=None, message=None, page_obj=None):
+        response = {"success": True}
 
+        if message:
+            response["message"] = message
 
+        if serialized_data:
+            response["data"] = serialized_data
+        else:
+            response["data"] = []
+
+        # Add pagination info if page_obj is provided
+        if page_obj:
+            response["pagination"] = {
+                "count": page_obj.paginator.count,
+                "total_pages": page_obj.paginator.num_pages,
+                "current_page": page_obj.number,  # Correctly reflect the current page
+                "next_page": page_obj.next_page_number() if page_obj.has_next() else None,
+                "previous_page": page_obj.previous_page_number() if page_obj.has_previous() else None,
+            }
+
+        return Response(
+            response,
+            status=status_code,
+        )
 class GetSingleObjectMixin:
     """
     Fetches single object of given model using PK

@@ -49,7 +49,7 @@ class TagSerializer(serializers.ModelSerializer):
     def get_products(self, obj):
         # Fetch only the first 8 products related to the tag
         
-        products = obj.products.all()
+        products = obj.products.all().order_by('-created_at')[:12]
         return ProductSerializer(products, many=True,context=self.context).data
 
 

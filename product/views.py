@@ -6,7 +6,9 @@ from rest_framework.response import Response
 from .mixins import *
 from .serializers import *
 from .models import Product,CarouselImage
-
+from django.db.models import Q
+from django.core.paginator import Paginator
+from .models import Product, Tag, Category, Brand
 
 
 class HomeView(ResponseMixin,APIView):
@@ -18,19 +20,6 @@ class HomeView(ResponseMixin,APIView):
             return self.AllTaggedProduct(request)
         else:
             return self.handle_error_response(error_message="bad request",status_code=400)
-    # def TaggedProduct(self,request):
-    #     tag=request.data.get("tag")
-    #     data={
-    #         "tag":tag
-    #     }
-    #     serializer=TaggedProductSerializer(data=data)
-    #     if serializer.is_valid():
-    #         obj=Tag.objects.prefetch_related('products__brand','products__category').get(id=tag)
-    #         serializer=TagSerializer(obj,context={"request":request})
-    #         return self.handle_success_response(message="products fteched successfully",serialized_data=serializer.data,status_code=200)
-        
-    #     else:
-    #         return self.handle_serializererror_response(error_messages=serializer.errors,status_code=400)
 
     def getnavbar(self,request):
         obj=Navbar.objects.prefetch_related('category').all()
@@ -44,7 +33,7 @@ class HomeView(ResponseMixin,APIView):
         # Fetch all tags with related products
         tags = Tag.objects.prefetch_related(
             'products', 'products__brand', 'products__category', 'products__images'
-        ).all().order_by('priority', '-last_modified')[:8]
+        ).all().order_by('priority', '-last_modified')
 
         # Serialize the tags with their related products
         serializer = TagSerializer(tags, many=True, context={"request": request})
@@ -119,4 +108,52 @@ class CategoryWiseProduct(APIView,ResponseMixin):
             return self.handle_error_response(error_message="bad request",status_code=400)
     def CategoryWiseProduct(self,request):
         category_id=request.GET.get("category_id")
-        obj=Product.objects.filter(Category__id=category_id).select_related("category")
+        print(category_id)
+        obj=Product.objects.filter(category=category_id).select_related('brand').prefetch_related("images")
+        serializer=ProductSerializer(obj,many=True,context={"request":request})
+        return self.handle_success_response(serialized_data=serializer.data,status_code=200,message="products fetched successfully")
+        # breakpoint()
+
+
+class SearchProduct(APIView,ResponseMixin):
+    def get(self,request):
+        query = request.GET.get('q', '')
+        price_min = request.GET.get('price_min', 0)
+        price_max = request.GET.get('price_max', 1000000)
+        category = request.GET.get('category', None)
+        brand = request.GET.get('brand', None)
+
+        # Build the base query
+        results = Product.objects.filter(
+            Q(product_name__icontains=query) |
+            Q(product_description__icontains=query) |
+            Q(tags__name__icontains=query) |
+            Q(category__name__icontains=query) |
+            Q(brand__name__icontains=query)
+        ).filter(
+            price__gte=price_min,
+            price__lte=price_max,
+            stock__gte=1  # Only show products that are in stock
+        )
+
+        # Filter by category if provided
+        if category:
+            results = results.filter(category__name__icontains=category)
+
+        # Filter by brand if provided
+        if brand:
+            results = results.filter(brand__name__icontains=brand)
+
+
+        paginator = Paginator(results, 10)  # Show 10 products per page
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        # Serialize the paginated results
+        serializer = ProductSerializer(page_obj, many=True,context={"request":request})
+
+        return self.handle_paginated_response(
+            status_code=200,
+            serialized_data=serializer.data,
+            page_obj=page_obj  # Pass paginator for pagination info
+        )

@@ -42,42 +42,42 @@ class HomeView(ResponseMixin,APIView):
         return serializer.data
     def AllTaggedProduct(self, request):
         # Fetch all tags with related products
-        tags = Tag.objects.prefetch_related('products', 'products__brand', 'products__category', 'products__images').all().order_by('priority','-last_modified',)[:8]
+        tags = Tag.objects.prefetch_related(
+            'products', 'products__brand', 'products__category', 'products__images'
+        ).all().order_by('priority', '-last_modified')[:8]
 
         # Serialize the tags with their related products
         serializer = TagSerializer(tags, many=True, context={"request": request})
         serialized_data = serializer.data
 
-        # Transform the serialized data into the desired format
-        data = {}
-        # return Response(serialized_data)
+        # Initialize the data structure categorized by section
+        section_wise_data = {}
+
         for tag in serialized_data:
-            section_name = tag['section']  # Get the section for the tag
-            tag_name = tag['name']  # Get the tag name
-            products = tag['products']
+            # Extract relevant fields from the serialized data
+            section_name = tag['section']  # Get the section name
+            tag_name = tag['name']         # Get the tag name
+            products = tag['products']     # Get the products under the tag
 
-            if section_name not in data:
-                # If the section doesn't exist, initialize it with a new dictionary for tags
-                data[section_name] = {
-                    tag_name: products  # Initialize the tag with its products
-                }
-            else:
-                # If the section exists, add the tag and products to it
-                if tag_name not in data[section_name]:
-                    data[section_name][tag_name] = products
-                else:
-                    # If the tag already exists in the section, extend its products list
-                    data[section_name][tag_name].extend(products)
+            # Group tags and their products under sections
+            if section_name not in section_wise_data:
+                section_wise_data[section_name] = []  # Initialize a new section
+            
+            # Add the tag and its products to the section
+            section_wise_data[section_name].append({
+                "tag_name": tag_name,
+                "products": products
+            })
 
-        # Structure the final response
+        # Final response structure
         response_data = {
-            'section_wise_product': data,
+            'section_wise_product': section_wise_data,
             'navbar': self.getnavbar(request),
             'carousel': self.get_carousel_images(request),
         }
 
+        # Return the response using your custom success handler
         return self.handle_success_response(serialized_data=response_data, status_code=200)
-
 
 class ProductDetailView(ResponseMixin,APIView,GetSingleObjectMixin):
 

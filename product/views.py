@@ -131,8 +131,8 @@ class SearchProduct(APIView,ResponseMixin):
             Q(category__name__icontains=query) |
             Q(brand__name__icontains=query)
         ).filter(
-            price__gte=price_min,
-            price__lte=price_max,
+            discount_price__gte=price_min,
+            discount_price__lte=price_max,
             stock__gte=1  # Only show products that are in stock
         )
 

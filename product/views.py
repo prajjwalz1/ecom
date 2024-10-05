@@ -154,7 +154,11 @@ class SearchProduct(APIView,ResponseMixin):
             discount_price__gte=price_min,
             discount_price__lte=price_max,
             stock__gte=1  # Only show products that are in stock
-        )
+        ).distinct()
+        
+        for result in results:
+            print(result.product_name)
+        # breakpoint()
 
         # Filter by category if provided
         if category:

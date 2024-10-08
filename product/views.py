@@ -181,3 +181,17 @@ class SearchProduct(APIView,ResponseMixin):
             serialized_data=serializer.data,
             page_obj=page_obj  # Pass paginator for pagination info
         )
+    
+
+class CheckOut(APIView,ResponseMixin):
+
+
+    def post(self,request):
+        request_type=request.data.get("request")
+        if request_type=="create_checkout":
+            return self.create_checkout(request)
+    def create_checkout(self,request):
+        shippingDetails=request.data.get("shippingDetails")
+        cart=request.data.get("cart")
+
+

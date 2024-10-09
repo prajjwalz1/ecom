@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     'ckeditor',
     'ckeditor_uploader',
     'debug_toolbar',
-    'corsheaders'
+    'corsheaders',
+    'Order'
 
 ]
 

@@ -12,14 +12,14 @@ class OrderItem(CustomizedModel):
 
 class ShippingDetails(CustomizedModel):
     order=models.ForeignKey('Order',on_delete=models.DO_NOTHING)
-    country=models.CharField(max_length=255,null=False,blank=True)
-    fullname=models.CharField(max_length=255,null=False,blank=True)
-    district=models.CharField(max_length=255,null=False,blank=True)
-    city=models.CharField(max_length=255,null=False,blank=True)
-    phonenumber=models.CharField(max_length=255,null=False,blank=True)
+    country=models.CharField(max_length=255,null=False,blank=False)
+    fullname=models.CharField(max_length=255,null=False,blank=False)
+    district=models.CharField(max_length=255,null=False,blank=False)
+    city=models.CharField(max_length=255,null=False,blank=False)
+    phonenumber=models.CharField(max_length=255,null=False,blank=False)
     alternate_phone_numbers=models.CharField(max_length=255,null=False,blank=True)
-    land_mark=models.CharField(max_length=255,null=False,blank=True)
-    postal_code=models.CharField(max_length=255,null=False,blank=True)
+    land_mark=models.CharField(max_length=255,null=False,blank=False)
+    postal_code=models.CharField(max_length=255,null=False,blank=False)
     additional_information=models.CharField(max_length=255,null=True,blank=True)
 
 

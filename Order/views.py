@@ -93,9 +93,9 @@ class CheckOut(APIView,ResponseMixin):
             OrderItem.objects.bulk_create(order_items)
 
         # Save shipping details
-        shipping_serializer = ShippingSerializer(data=shipping_details_data)
-        if not shipping_serializer.is_valid():
-            return self.handle_serializererror_response(error_messages=shipping_serializer.errors, status_code=400)
-        shipping_serializer.save()
+        serializer = ShippingSerializer(data=shipping_details_data)
+        if not serializer.is_valid():
+            return self.handle_serializererror_response(error_messages=serializer.errors, status_code=400)
+        serializer.save()
 
         return self.handle_success_response(status_code=200, message="Order created successfully",serialized_data={"order_id":order_id,"order_amount":cart_amount})

@@ -81,10 +81,12 @@ class PromoCode(CustomizedModel):
     
 class Order(CustomizedModel):
     orderid=models.CharField(max_length=255,null=True,blank=True)
+    transaction_uuid=models.CharField(max_length=255,null=True,blank=True)
     cart_amount=models.DecimalField(decimal_places=2,max_digits=8)
     promotional_discount=models.DecimalField(decimal_places=2,max_digits=8)
     promocode_used=models.ForeignKey(PromoCode,null=True,blank=True,on_delete=models.DO_NOTHING)
     price_after_discount=models.DecimalField(decimal_places=2,max_digits=8)
+    paid_amount=models.DecimalField(decimal_places=2,max_digits=8,null=True)
     payment_status=models.CharField(choices=(("pending","pending"),("processing","procesing"),("completed","completed")),default=None,null=True,blank=True)
     def __str__(self):
         return self.orderid

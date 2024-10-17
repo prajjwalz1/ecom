@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>eSewa Payment Integration</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/hmac-sha256.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/enc-base64.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>eSewa Payment Form</h2>
+        <form id="paymentForm" action="https://rc-epay.esewa.com.np/api/epay/main/v2/form" method="POST">
+            <div class="form-group">
+                <label for="amount">Amount</label>
+                <input type="text" id="amount" name="amount" value="100" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="tax_amount">Tax Amount</label>
+                <input type="text" id="tax_amount" name="tax_amount" value="10" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="total_amount">Total Amount</label>
+                <input type="text" id="total_amount" name="total_amount" value="110" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="transaction_uuid">Transaction UUID</label>
+                <input type="text" id="transaction_uuid" name="transaction_uuid" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="product_code">Product Code</label>
+                <input type="text" id="product_code" name="product_code" value="EPAYTEST" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="product_service_charge">Service Charge</label>
+                <input type="text" id="product_service_charge" name="product_service_charge" value="0" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="product_delivery_charge">Delivery Charge</label>
+                <input type="text" id="product_delivery_charge" name="product_delivery_charge" value="0" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="success_url">Success URL</label>
+                <input type="text" id="success_url" name="success_url" value="https://esewa.com.np" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="failure_url">Failure URL</label>
+                <input type="text" id="failure_url" name="failure_url" value="https://google.com" required class="form-control">
+            </div>
+
+            <!-- Hidden input for signed field names -->
+            <input type="hidden" id="signed_field_names" name="signed_field_names" value="total_amount,transaction_uuid,product_code" required>
+
+            <!-- Hidden input for signature -->
+            <input type="hidden" id="signature" name="signature" required>
+
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('paymentForm').onsubmit = function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            // Get values from form inputs
+            const amount = document.getElementById('amount').value;
+            const tax_amount = document.getElementById('tax_amount').value;
+            const total_amount = document.getElementById('total_amount').value;
+            const transaction_uuid = document.getElementById('transaction_uuid').value;
+            const product_code = document.getElementById('product_code').value;
+            
+            // Secret Key for HMAC
+            const secretKey = "8gBm/:&EnhH.1/q";
+
+            // Create the message for signature generation
+            // const message = `total_amount=${total_amount}&transaction_uuid=${transaction_uuid}&product_code=${product_code}`;
+            
+            // Generate HMAC SHA256 signature
+            const hash = CryptoJS.HmacSHA256("Message", secretKey);
+            const signature = CryptoJS.enc.Base64.stringify(hash);
+
+            // Log the signature for debugging
+            console.log("Generated Signature:", signature);
+
+            // Set the signature field value
+            document.getElementById('signature').value = signature;
+
+            // Wait for 3 seconds before submitting the form
+            setTimeout(() => {
+                document.getElementById('paymentForm').submit();
+            }, 3000);
+        };
+    </script>
+</body>
+</html>

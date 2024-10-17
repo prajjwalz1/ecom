@@ -20,6 +20,7 @@ def send_admin_notification_on_order(sender, instance, created, **kwargs):
             # f"Customer: {instance.customer.name}\n"
             f"Total Amount: {instance.price_after_discount}\n"
             f"Payment Status: {instance.payment_status}\n\n"
+            f"View your Order: https://api.infoteckstore.com/order/vieworder?order_id={instance.id}\n\n"
             "Please log in to the admin panel for further details."
         )
         print(settings.DEFAULT_FROM_EMAIL)

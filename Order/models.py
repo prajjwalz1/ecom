@@ -85,6 +85,6 @@ class Order(CustomizedModel):
     promotional_discount=models.DecimalField(decimal_places=2,max_digits=8)
     promocode_used=models.ForeignKey(PromoCode,null=True,blank=True,on_delete=models.DO_NOTHING)
     price_after_discount=models.DecimalField(decimal_places=2,max_digits=8)
-    
+    payment_status=models.CharField(choices=(("pending","pending"),("processing","procesing"),("completed","completed")),default=None,null=True,blank=True)
     def __str__(self):
         return self.orderid

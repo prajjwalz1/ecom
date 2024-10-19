@@ -188,7 +188,7 @@ def order_slip_view(request):
     order_id=request.GET.get("order_id")
     response_type=request.GET.get("response_type")
     order_obj = get_object_or_404(
-        Order.objects.prefetch_related('orderitem_set__product','shippingdetails_set'),
+        Order.objects.prefetch_related('orderitem_set__product','shippingdetails'),
         id=order_id
     )
     
@@ -208,7 +208,7 @@ def order_slip_view(request):
     # amount_in_words = num2words(total_amount, lang='ne') + ' रुपैया'  # Nepali currency format
 
     # Prepare context with relevant order details
-    shipping_details = order_obj.shippingdetails_set.first()
+    shipping_details = order_obj.shippingdetails.get(order=order_obj)
     
     context = {
         'order_date': order_obj.created_at,  

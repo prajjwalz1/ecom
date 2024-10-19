@@ -11,7 +11,7 @@ class OrderItem(CustomizedModel):
 
 
 class ShippingDetails(CustomizedModel):
-    order=models.ForeignKey('Order',on_delete=models.DO_NOTHING)
+    order=models.ForeignKey('Order',on_delete=models.DO_NOTHING,related_name='shippingdetails')
     country=models.CharField(max_length=255,null=False,blank=False)
     fullname=models.CharField(max_length=255,null=False,blank=False)
     district=models.CharField(max_length=255,null=False,blank=False)
@@ -21,6 +21,8 @@ class ShippingDetails(CustomizedModel):
     land_mark=models.CharField(max_length=255,null=False,blank=False)
     postal_code=models.CharField(max_length=255,null=False,blank=False)
     additional_information=models.CharField(max_length=255,null=True,blank=True)
+    email=models.EmailField(null=False,blank=False)
+    request_delivery_date=models.DateField(null=True,blank=True)
 
 
 class PromoCode(CustomizedModel):
@@ -81,6 +83,7 @@ class PromoCode(CustomizedModel):
     
 class Order(CustomizedModel):
     orderid=models.CharField(max_length=255,null=True,blank=True)
+    order_status=models.CharField(choices=(('order_created','New order'),('order_viewed','Order viewed'),('next_delivery','Ready to deliver'),('shipped','shipped'),('product_received','product_received')),default='order_created')
     transaction_uuid=models.CharField(max_length=255,null=True,blank=True)
     cart_amount=models.DecimalField(decimal_places=2,max_digits=8)
     promotional_discount=models.DecimalField(decimal_places=2,max_digits=8)

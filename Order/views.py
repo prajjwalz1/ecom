@@ -14,8 +14,10 @@ from django.views import View
 import base64
 import json
 from decimal import Decimal
-
+from rest_framework.views import APIView 
 from django.http import JsonResponse
+from product.mixins import ResponseMixin
+from rest_framework.decorators import api_view
 
 def generate_order_id():
     # Get the current date and time
@@ -178,9 +180,13 @@ from django.shortcuts import render
 from django.utils.timezone import now
 from num2words import num2words
 
+@staticmethod
+@api_view(['GET'])
 def order_slip_view(request):
+
     # Fetch the order and related objects
     order_id=request.GET.get("order_id")
+    response_type=request.GET.get("response_type")
     order_obj = get_object_or_404(
         Order.objects.prefetch_related('orderitem_set__product','shippingdetails_set'),
         id=order_id
@@ -198,7 +204,7 @@ def order_slip_view(request):
     rupees_in_words = num2words(rupees, lang='en') + ' rupees'
     paisa_in_words = num2words(paisa, lang='en') + ' paisa' if paisa > 0 else ''
 
-    amount_in_words = f"{rupees_in_words} र {paisa_in_words}" if paisa > 0 else rupees_in_words
+    amount_in_words = f"{rupees_in_words} and {paisa_in_words}" if paisa > 0 else rupees_in_words
     # amount_in_words = num2words(total_amount, lang='ne') + ' रुपैया'  # Nepali currency format
 
     # Prepare context with relevant order details
@@ -238,5 +244,10 @@ def order_slip_view(request):
         'amount_in_words': amount_in_words
     }
     print(context)
+    if response_type=="template":
+        return render(request, 'orderslip.html', context)
     
-    return render(request, 'orderslip.html', context)
+    elif response_type=="json":
+        return ResponseMixin.handle_success_response(serialized_data=context,status_code=200,message="order fetched successfully")
+    else:
+        return ResponseMixin.handle_error_response(error_message="invalid response type",status_code=400)

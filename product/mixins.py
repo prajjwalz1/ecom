@@ -48,21 +48,21 @@ class ResponseMixin:
     """
     Handles Both Error and Successfull response
     """
-
-    def handle_error_response(self, error_message, status_code):
+    @staticmethod
+    def handle_error_response(error_message, status_code):
         return Response(
             {"success": False, "message": str(error_message)},
             status=status_code,
         )
-    
-    def handle_serializererror_response(self,status_code,**error_messages,):
+    @staticmethod
+    def handle_serializererror_response(status_code,**error_messages,):
         return Response(
                 {"success": False, "message": error_messages["error_messages"]},
                 status=status_code,
             )
 
-
-    def handle_success_response(self, status_code, serialized_data=None, message=None):
+    @staticmethod
+    def handle_success_response(status_code, serialized_data=None, message=None):
         response = {"success": True}
         
 
@@ -76,7 +76,7 @@ class ResponseMixin:
             response,
             status=status_code,
         )
-    def handle_paginated_response(self, status_code, serialized_data=None, message=None, page_obj=None):
+    def handle_paginated_response( status_code, serialized_data=None, message=None, page_obj=None):
         response = {"success": True}
 
         if message:

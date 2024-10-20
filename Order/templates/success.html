@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+    {%load static%}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -43,13 +44,14 @@
 <script>
     let countdown = 10; // Countdown time in seconds
     const countdownElement = document.getElementById('countdown');
-
+    var orderId = "{{ order_id }}"
+    redirect_url= "{{ redirect_to }}"
     const interval = setInterval(function() {
         countdown--;
         countdownElement.textContent = countdown; // Update countdown display
         if (countdown <= 0) {
             clearInterval(interval);
-            window.location.href = 'https://infotech-frontend.pages.dev'; // Redirect URL
+            window.location.href = redirect_url; // Redirect URL
         }
     }, 1000); // 1000 milliseconds = 1 second
 </script>

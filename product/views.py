@@ -19,7 +19,7 @@ class HomeView(ResponseMixin,APIView):
         if request_type=="all_tagged_product":
             return self.AllTaggedProduct(request)
         else:
-            return self.handle_error_response(error_message="bad request",status_code=400)
+            return ResponseMixin.handle_error_response(error_message="bad request",status_code=400)
 
     def getnavbar(self,request):
         obj=Navbar.objects.prefetch_related('category').all()
@@ -66,7 +66,7 @@ class HomeView(ResponseMixin,APIView):
         }
 
         # Return the response using your custom success handler
-        return self.handle_success_response(serialized_data=response_data, status_code=200)
+        return ResponseMixin.handle_success_response(serialized_data=response_data, status_code=200)
 
 class ProductDetailView(ResponseMixin,APIView,GetSingleObjectMixin):
 
@@ -76,14 +76,14 @@ class ProductDetailView(ResponseMixin,APIView,GetSingleObjectMixin):
         if request_type=="get_product_detail":
             return self.get_product_detail(request,product_id)
         else:
-            return self.handle_error_response(error_message="request is not valid",status_code=400)
+            return ResponseMixin.handle_error_response(error_message="request is not valid",status_code=400)
     
     def get_product_detail(self,request,id):
         query={"id":id}
         obj,error=self.get_object(Product,**query)
         # breakpoint()
         serializer=ProductDetailSerializer(obj,context={"request":request})
-        return self.handle_success_response(serialized_data=serializer.data,status_code=200)
+        return ResponseMixin.handle_success_response(serialized_data=serializer.data,status_code=200)
         breakpoint()
 
 class BrandView(ResponseMixin,APIView):
@@ -92,12 +92,12 @@ class BrandView(ResponseMixin,APIView):
         if request_type=="get_all_brands":
             return self.AllBrands(request)
         else:
-            return self.handle_error_response(error_message="bad request",status_code=400)
+            return ResponseMixin.handle_error_response(error_message="bad request",status_code=400)
     
     def AllBrands(self,request):
         qs=Brand.objects.all()
         serializer=BrandSerializer(qs,context={"request":request},many=True)
-        return self.handle_success_response(serialized_data=serializer.data,message="brands retrieved successfully",status_code=200)
+        return ResponseMixin.handle_success_response(serialized_data=serializer.data,message="brands retrieved successfully",status_code=200)
     
 class CategoryWiseProduct(APIView,ResponseMixin):
     def get(self,request):
@@ -105,7 +105,7 @@ class CategoryWiseProduct(APIView,ResponseMixin):
         if request_type=="category_wise_product":
             return self.CategoryWiseProduct(request)
         else:
-            return self.handle_error_response(error_message="bad request",status_code=400)
+            return ResponseMixin.handle_error_response(error_message="bad request",status_code=400)
     def CategoryWiseProduct(self, request):
         category_id = request.GET.get("category_id")
         
@@ -122,14 +122,14 @@ class CategoryWiseProduct(APIView,ResponseMixin):
 
             serializer = ProductSerializer(products, many=True, context={"request": request})
 
-            return self.handle_success_response(
+            return ResponseMixin.handle_success_response(
                 serialized_data=serializer.data,
                 status_code=200,
                 message="Products fetched successfully"
             )
 
         except Category.DoesNotExist:
-            return self.handle_success_response(
+            return ResponseMixin.handle_success_response(
                 serialized_data=[],
                 status_code=404,
                 message="Category not found"
@@ -176,22 +176,10 @@ class SearchProduct(APIView,ResponseMixin):
         # Serialize the paginated results
         serializer = ProductSerializer(page_obj, many=True,context={"request":request})
 
-        return self.handle_paginated_response(
+        return ResponseMixin.handle_paginated_response(
             status_code=200,
             serialized_data=serializer.data,
             page_obj=page_obj  # Pass paginator for pagination info
         )
     
-
-class CheckOut(APIView,ResponseMixin):
-
-
-    def post(self,request):
-        request_type=request.data.get("request")
-        if request_type=="create_checkout":
-            return self.create_checkout(request)
-    def create_checkout(self,request):
-        shippingDetails=request.data.get("shippingDetails")
-        cart=request.data.get("cart")
-
 

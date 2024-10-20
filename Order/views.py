@@ -18,6 +18,9 @@ from rest_framework.views import APIView
 from django.http import JsonResponse
 from product.mixins import ResponseMixin
 from rest_framework.decorators import api_view
+from django.conf import settings
+import os
+
 
 def generate_order_id():
     # Get the current date and time
@@ -133,6 +136,7 @@ class eSewaSuccessView(View):
     def get(self, request):
         # Get the encoded data from the query parameter
         encoded_data = request.GET.get('data')
+        frontend_url=os.environ.get("NEXT_BASE_URL")
 
         if encoded_data:
             try:
@@ -151,7 +155,11 @@ class eSewaSuccessView(View):
                 # Add other fields as necessary
 
                 # Update the payment status in the database
-                payment = Order.objects.filter(transaction_uuid=transaction_uuid).first()
+                payment = Order.objects.get(transaction_uuid=transaction_uuid)
+
+                redirect=frontend_url+"/track-order/"+payment.id
+                print(redirect)
+                context={"order_id":payment.id,"redirect_to":redirect}
                 if payment:
                     if  status == "COMPLETE":
                         cleaned_amount = total_amount.replace(",", "")
@@ -160,7 +168,7 @@ class eSewaSuccessView(View):
                         payment.full_clean()  # Validate the payment object
                         payment.save()
 
-                        return render(request,'success.html')
+                        return render(request,'success.html',context)
                     
                     else:
                         payment.payment_status = "procesing"

@@ -131,8 +131,3 @@ class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model=Brand
         fields="__all__"
-
-class ShippingSerializer(serializers.ModelSerializer):
-    class Meta:
-        model=Brand
-        fields="__all__"

@@ -157,7 +157,7 @@ class eSewaSuccessView(View):
                 # Update the payment status in the database
                 payment = Order.objects.get(transaction_uuid=transaction_uuid)
 
-                redirect=frontend_url+"/track-order/"+payment.id
+                redirect=frontend_url+"/track-order/"+str(payment.id)
                 print(redirect)
                 context={"order_id":payment.id,"redirect_to":redirect}
                 if payment:

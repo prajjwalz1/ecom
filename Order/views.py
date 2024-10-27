@@ -20,7 +20,7 @@ from product.mixins import ResponseMixin
 from rest_framework.decorators import api_view
 from django.conf import settings
 import os
-
+from product.models import ProductVariant
 
 def generate_order_id():
     # Get the current date and time
@@ -68,13 +68,27 @@ class CheckOut(APIView,ResponseMixin):
         promocode = None
 
         # Calculate the cart amount and determine promo code discount
+        product_ids = {item.get("product_id") for item in cart}
+        variant_ids = {item.get("product_variant_id") for item in cart if item.get("product_variant_id")}
+
+        # Fetch all products and variants at once
+        products = Product.objects.filter(id__in=product_ids)
+        variants = ProductVariant.objects.filter(id__in=variant_ids)
+
+        # Create dictionaries for quick lookup by ID
+        # product_price_map = {product.id: product.price for product in products}
+        variant_price_map = {variant.id: variant.discount_price for variant in variants}
+
+        # Calculate cart amount
+        cart_amount = 0
         for item in cart:
             product_id = item.get("product_id")
+            variant_id = item.get("product_variant_id")
             quantity = item.get("quantity", 1)
-
-            # Fetch the product to get the price
-            product = get_object_or_404(Product, id=product_id)
-            cart_amount += product.price * quantity
+            
+            # Use variant price if available; otherwise, fallback to product price
+            price = variant_price_map.get(variant_id)
+            cart_amount += price * quantity
 
         # Apply promo code if provided
         promo_code_data = request.data.get("promo_code")
@@ -84,7 +98,7 @@ class CheckOut(APIView,ResponseMixin):
             price_after_discount = cart_amount - promotional_discount
         else:
             price_after_discount = cart_amount
-
+        print(price_after_discount)
         # Create the Order object
         tranx_id=self.generate_transaction_id(order_id)
         order = Order.objects.create(
@@ -105,9 +119,10 @@ class CheckOut(APIView,ResponseMixin):
             for item in cart:
                 product_id = item.get("product_id")
                 quantity = item.get("quantity", 1)
+                variant_id=item.get("product_variant_id")
                 
                 product = get_object_or_404(Product, id=product_id)
-                purchase_amount = product.price * quantity
+                purchase_amount = variant_price_map.get(variant_id)
 
                 # Create an OrderItem instance and add it to the list
                 order_item = OrderItem(

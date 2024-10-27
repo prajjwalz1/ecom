@@ -15,30 +15,48 @@ class BrandSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'description','image']  # Include fields you want to display
 
 class ProductImageSerializer(serializers.ModelSerializer):
-    image=serializers.SerializerMethodField()
     class Meta:
         model = ProductImage
-        fields = ['id', 'image', 'alt_text']
-    def get_image(self,obj):
-        if obj.image:
-            request=self.context.get("request")
-            image=obj.image.url
-            if request is not None:
-                return request.build_absolute_uri(image)
-            return image
-        return None
+        fields = ['id','image', 'alt_text']
+    
+class ProductVariantSerializer(serializers.ModelSerializer):
+    images = serializers.SerializerMethodField()  # Use SerializerMethodField for images
+
+    class Meta:
+        model = ProductVariant
+        fields = ['id', 'price', 'color_code', 'color_name', 'ram', 'rom', 'discount_price', 'images']
+
+    def get_images(self, obj):
+        # Use the ProductImageSerializer to serialize related images
+        return ProductImageSerializer(obj.productvariantsimages.all(), many=True,context=self.context).data  # Serialize images directly
 
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     brand = BrandSerializer(read_only=True)
-    images = ProductImageSerializer(many=True, read_only=True)
+    images = serializers.SerializerMethodField()  # Assuming images are linked directly to Product
+    variants = ProductVariantSerializer(many=True, read_only=True)  # Include variants for price access
 
     class Meta:
         model = Product
-        fields = ['id', 'product_name', 'product_description','images', 'category', 'brand', 'price', 'discount_price', 'stock']
-    
+        fields = ['id', 'product_name', 'product_description', 'images', 'category', 'brand', 'variants']
 
+    def get_price(self, obj):
+        # Optionally return the price of the first variant, adjust as necessary
+        if obj.variants.exists():
+            return obj.variants.first().price
+        return None
 
+    def get_discount_price(self, obj):
+        # Optionally return the discount price of the first variant, adjust as necessary
+        if obj.variants.exists():
+            return obj.variants.first().discount_price
+        return None
+    def get_images(self, obj):
+        # Use a list comprehension to serialize each image
+        images = []
+        for variant in obj.variants.all():  # Use .all() to get the queryset
+            images.extend(ProductImageSerializer(variant.productvariantsimages.all(), many=True,context=self.context).data)  # Serialize the images
+        return images
 class TagSerializer(serializers.ModelSerializer):
     products = serializers.SerializerMethodField()
 
@@ -98,10 +116,12 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     brand = BrandSerializer(read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
     specifications = serializers.SerializerMethodField()
+    variants = ProductVariantSerializer(read_only=True)  # Include variants for price access
+
 
     class Meta:
         model = Product
-        fields = ['id', 'product_name','details', 'specifications', 'product_description', 'images', 'category', 'brand', 'price', 'discount_price', 'stock']
+        fields = ['id', 'product_name','details', 'specifications', 'product_description', 'images','variants', 'category', 'brand', 'stock']
 
     def get_specifications(self, obj):
         # Fetch all category-level specifications

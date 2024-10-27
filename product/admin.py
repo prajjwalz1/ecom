@@ -41,12 +41,23 @@ class ProductSpecificationInline(admin.TabularInline):
     extra = 1  # Allows adding multiple specifications in the same form
 
 
+class ProductVariantPriceHistoryInline(admin.TabularInline):
+    model = ProductVariantPriceHistory
+    extra = 0
+    readonly_fields = ('price', 'discount_price', 'date_added')
+
+class ProductVariantInline(admin.TabularInline):
+    model = ProductVariant
+    extra = 0
+    # readonly_fields = ('price', 'discount_price')
+    inlines = [ProductVariantPriceHistoryInline]
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('product_name', 'category', 'brand', 'price', 'stock')
+    list_display = ('product_name', 'category', 'brand', 'stock')
     search_fields = ('product_name', 'category__name', 'brand__name')
     list_filter = ('category', 'brand', 'tags')
-    inlines = [ProductImageInline, ProductSpecificationInline]
+    inlines = [ProductVariantInline]
 
     fieldsets = (
         (None, {
@@ -55,21 +66,17 @@ class ProductAdmin(admin.ModelAdmin):
                 'product_description', 
                 'category', 
                 'brand', 
-                'price', 
-                'discount_price', 
                 'stock', 
                 'tags',
-                'details'  # Added for RichTextField if you have it
+                'details'
             )
         }),
     )
 
     def get_queryset(self, request):
-        # Optionally customize the queryset for better performance or filtering
         return super().get_queryset(request).select_related('category', 'brand')
 
     def save_model(self, request, obj, form, change):
-        # Custom save behavior, logging, or validation can be added here
         logger.info(f"Admin saving Product: {obj.product_name}")
         super().save_model(request, obj, form, change)
 
@@ -82,8 +89,8 @@ class ProductSpecificationAdmin(admin.ModelAdmin):
 
 @admin.register(ProductImage)
 class ProductImageAdmin(admin.ModelAdmin):
-    list_display = ('product', 'image', 'alt_text')
-    search_fields = ('product__product_name',)
+    list_display = ('productvariant', 'image', 'alt_text')
+    search_fields = ('productvaraint__product_name',)
 
 
 @admin.register(CarouselImage)

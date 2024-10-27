@@ -32,7 +32,11 @@ class HomeView(ResponseMixin,APIView):
     def AllTaggedProduct(self, request):
         # Fetch all tags with related products
         tags = Tag.objects.prefetch_related(
-            'products', 'products__brand', 'products__category', 'products__images'
+            'products',                      # Prefetch related products
+            'products__brand',               # Prefetch related brand for each product
+            'products__category',            # Prefetch related category for each product
+            'products__variants',            # Prefetch related variants for each product
+            'products__variants__productvariantsimages'  # Prefetch related images for each variant
         ).all().order_by('priority', '-last_modified')
 
         # Serialize the tags with their related products
@@ -82,7 +86,7 @@ class ProductDetailView(ResponseMixin,APIView,GetSingleObjectMixin):
         query={"id":id}
         obj,error=self.get_object(Product,**query)
         # breakpoint()
-        serializer=ProductDetailSerializer(obj,context={"request":request})
+        serializer=ProductSerializer(obj,context={"request":request})
         return ResponseMixin.handle_success_response(serialized_data=serializer.data,status_code=200)
         breakpoint()
 
@@ -118,7 +122,7 @@ class CategoryWiseProduct(APIView,ResponseMixin):
             category_ids = list(child_category_ids) + [main_category.id]  # Include the main category ID
             print(child_category_ids)
             # Fetch products based on the category IDs
-            products = Product.objects.filter(category_id__in=category_ids).select_related('brand').prefetch_related("images")
+            products = Product.objects.filter(category_id__in=category_ids).select_related('brand').prefetch_related("variants",'variants__productvariantsimages')
 
             serializer = ProductSerializer(products, many=True, context={"request": request})
 

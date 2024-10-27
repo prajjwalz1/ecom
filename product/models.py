@@ -1,7 +1,7 @@
 from django.db import models
 from .mixins import CustomizedModel
 from ckeditor.fields import RichTextField
-
+from django.utils import timezone
 # Create your models here.
 import logging
 logger = logging.getLogger(__name__)
@@ -49,8 +49,6 @@ class Product(CustomizedModel):
     product_description=models.TextField(null=False,blank=False)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True, related_name='products')
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     stock = models.IntegerField()
     tags = models.ManyToManyField(Tag, blank=True, related_name='products')
     details= RichTextField(null=True,blank=True) 
@@ -62,14 +60,38 @@ class Product(CustomizedModel):
         logger.info(f"Saving Product: {self.product_name} with description: {self.product_description}")
         super().save(*args, **kwargs)
 
+class ProductVariant(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
+    color_code = models.CharField(max_length=255, null=True, blank=True)
+    color_name = models.CharField(max_length=255, null=True, blank=True)
+    rom = models.CharField(max_length=255, null=True, blank=True)
+    ram = models.CharField(max_length=255, null=True, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
+    def __str__(self):
+        return f"{self.product.product_name} - {self.color_name} - {self.rom}/{self.ram}"
+
+
+class ProductVariantPriceHistory(CustomizedModel):
+    variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE, related_name="price_history")
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    date_added = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-date_added"]  # Order by latest price change
+
+    def __str__(self):
+        return f"{self.variant} - {self.price} on {self.date_added}"
+    
 class ProductImage(CustomizedModel):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
+    productvariant = models.ForeignKey(ProductVariant,null=True,blank=True, on_delete=models.CASCADE, related_name='productvariantsimages')
     image = models.ImageField(upload_to='products/images/')
     alt_text = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
-        return f'Image for {self.product.product_name}'
+        return f'Image for {self.alt_text}'
     
 
 class ProductSpecification(CustomizedModel):

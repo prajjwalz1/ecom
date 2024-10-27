@@ -55,11 +55,17 @@ class ResponseMixin:
             status=status_code,
         )
     @staticmethod
-    def handle_serializererror_response(status_code,**error_messages,):
+    def handle_serializererror_response(serializer_errors, status_code):
+        # Combine all error messages into a single response structure
+        error_messages = []
+        for field, messages in serializer_errors.items():
+            for message in messages:
+                error_messages.append(f"{field}: {message}")
+
         return Response(
-                {"success": False, "message": error_messages["error_messages"]},
-                status=status_code,
-            )
+            {"success": False, "errors": error_messages},
+            status=status_code,
+        )
 
     @staticmethod
     def handle_success_response(status_code, serialized_data=None, message=None):

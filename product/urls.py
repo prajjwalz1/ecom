@@ -8,6 +8,7 @@ urlpatterns = [
     path('brands',BrandView.as_view()),
     path('category-wise-product',CategoryWiseProduct.as_view()),
     path('search-product',SearchProduct.as_view()),
+    path('productreview',ProductReviewView.as_view()),
 
 
 

@@ -107,3 +107,18 @@ class Navbar(CustomizedModel):
 
     def __str__(Self):
         return Self.name
+    
+
+class ProductReview(CustomizedModel):
+    product = models.ForeignKey(Product, on_delete=models.DO_NOTHING, null=False, blank=True)
+    review = models.TextField(null=False, blank=True)
+
+    def __str__(self):
+        return f"Review for {self.product} - {self.review[:30]}"
+    
+class ProductReviewReply(CustomizedModel):
+    review=models.ForeignKey(ProductReview,on_delete=models.DO_NOTHING,related_name="replies")
+    reply=models.TextField(null=False, blank=True)
+
+    def __str__(self):
+        return self.review.review

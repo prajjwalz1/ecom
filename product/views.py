@@ -153,7 +153,6 @@ class SearchProduct(APIView,ResponseMixin):
         ).filter(
             discount_price__gte=price_min,
             discount_price__lte=price_max,
-            stock__gte=1  # Only show products that are in stock
         ).distinct()
         
         for result in results:
@@ -183,3 +182,44 @@ class SearchProduct(APIView,ResponseMixin):
         )
     
 
+class ProductReviewView(APIView,ResponseMixin):
+    def post(self,request):
+        request_type=request.GET.get('request')
+        if request_type =="post_review":
+            return self.post_review(request)
+        if request_type =="reply_review":
+            return self.reply_review(request)
+        else:
+            return Response({"error": "Invalid request type"}, status=400)
+    def get(self,request):
+        request_type=request.GET.get('request')
+        if request_type =="get_product_review":
+            return self.get_product_review(request)
+        else:
+            return Response({"error": "Invalid request type"}, status=400)
+    def post_review(self,request):
+        data=request.data
+        review_serializer=ReviewSerializer(data=data)
+        if review_serializer.is_valid():
+            review_serializer.save()
+            print("sssssssssssssss")            
+            return ResponseMixin.handle_success_response(message="product review added successfully",status_code=200)
+        else:
+            return ResponseMixin.handle_serializererror_response(serializer_errors=review_serializer.errors,status_code=400)
+    def reply_review(self,request):
+        data=request.data
+        review_serializer=ReplyReviewSerializer(data=data)
+        if review_serializer.is_valid():
+            review_serializer.save()
+            print("sssssssssssssss")            
+            return ResponseMixin.handle_success_response(message="product review added successfully",status_code=200)
+        else:
+            return ResponseMixin.handle_serializererror_response(serializer_errors=review_serializer.errors,status_code=400)
+        
+    def get_product_review(self,request):
+        review=ProductReview.objects.filter(product=request.GET.get("product_id")).prefetch_related('replies')
+        review_serializer=GETReviewSerializer(review,many=True)
+
+                   
+        return ResponseMixin.handle_success_response(message="product review added successfully",status_code=200,serialized_data=review_serializer.data)
+       

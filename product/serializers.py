@@ -131,3 +131,24 @@ class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model=Brand
         fields="__all__"
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=ProductReview
+        fields = ['id','product', 'review']
+
+class ReplyReviewSerializer(serializers.ModelSerializer):
+    # Assuming `review` is a ForeignKey field in ProductReview
+    review = serializers.PrimaryKeyRelatedField(queryset=ProductReview.objects.all())
+
+    class Meta:
+        model = ProductReviewReply
+        fields = ['review', 'reply']
+
+
+class GETReviewSerializer(serializers.ModelSerializer):
+    replies = ReplyReviewSerializer(many=True, read_only=True)  # Use the related name from the Reply model
+
+    class Meta:
+        model = ProductReview
+        fields = ['id', 'product', 'review', 'replies']

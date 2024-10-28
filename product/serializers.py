@@ -24,7 +24,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductVariant
-        fields = ['id', 'price', 'color_code', 'color_name', 'ram', 'rom', 'discount_price', 'images']
+        fields = ['id', 'price','variant_name', 'color_code', 'color_name', 'ram', 'rom', 'discount_price', 'images']
 
     def get_images(self, obj):
         # Use the ProductImageSerializer to serialize related images

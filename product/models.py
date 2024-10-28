@@ -62,6 +62,7 @@ class Product(CustomizedModel):
 
 class ProductVariant(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
+    variant_name = models.CharField(max_length=255, null=True, blank=True)
     color_code = models.CharField(max_length=255, null=True, blank=True)
     color_name = models.CharField(max_length=255, null=True, blank=True)
     rom = models.CharField(max_length=255, null=True, blank=True)
@@ -69,8 +70,15 @@ class ProductVariant(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        # Automatically set variant_name if color_name, rom, and ram are provided
+        if self.color_name and self.rom and self.ram:
+            self.variant_name = f"{self.color_name} {self.rom}/{self.ram}"
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.product.product_name} - {self.color_name} - {self.rom}/{self.ram}"
+
 
 
 class ProductVariantPriceHistory(CustomizedModel):

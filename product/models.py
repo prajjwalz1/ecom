@@ -74,6 +74,9 @@ class ProductVariant(models.Model):
         # Automatically set variant_name if color_name, rom, and ram are provided
         if self.color_name and self.rom and self.ram :
             self.variant_name = f"{self.color_name} {self.rom}/{self.ram}"
+        
+        elif self.color_name ==None and self.ram==None:
+            self.variant_name = f" {self.rom}"
         else:
              self.variant_name = f"{self.color_name} {self.rom}"
         

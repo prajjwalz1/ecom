@@ -151,13 +151,13 @@ class Navbar(CustomizedModel):
     
 
 class ProductReview(CustomizedModel):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)  # Consider using CASCADE or SET_NULL
+    product = models.ForeignKey(Product, on_delete=models.CASCADE,null=True,blank=True)  # Consider using CASCADE or SET_NULL
     review = models.TextField(null=False, blank=False)  # Ensure review cannot be blank
 
     def __str__(self):
         return f"Review for {self.product.product_name} - {self.review[:30]}"
 class ProductReviewReply(CustomizedModel):
-    review=models.ForeignKey(ProductReview,on_delete=models.DO_NOTHING,related_name="replies")
+    review=models.ForeignKey(ProductReview,on_delete=models.CASCADE,related_name="replies")
     reply=models.TextField(null=False, blank=True)
 
     def __str__(self):

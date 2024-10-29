@@ -38,7 +38,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'product_name','stock', 'product_description', 'images', 'category', 'brand', 'variants']
+        fields = ['id', 'product_name','stock','details', 'product_description', 'images', 'category', 'brand', 'variants']
 
     def get_price(self, obj):
         # Optionally return the price of the first variant, adjust as necessary

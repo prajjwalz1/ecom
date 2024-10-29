@@ -155,7 +155,7 @@ class ProductReview(CustomizedModel):
     review = models.TextField(null=False, blank=False)  # Ensure review cannot be blank
 
     def __str__(self):
-        return f"Review for {self.product.name} - {self.review[:30]}"
+        return f"Review for {self.product.product_name} - {self.review[:30]}"
 class ProductReviewReply(CustomizedModel):
     review=models.ForeignKey(ProductReview,on_delete=models.DO_NOTHING,related_name="replies")
     reply=models.TextField(null=False, blank=True)

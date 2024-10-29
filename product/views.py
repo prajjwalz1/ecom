@@ -154,9 +154,6 @@ class SearchProduct(APIView,ResponseMixin):
             Q(tags__name__icontains=query) |
             Q(category__name__icontains=query) |
             Q(brand__name__icontains=query)
-        ).filter(
-            discount_price__gte=price_min,
-            discount_price__lte=price_max,
         ).distinct()
         
         for result in results:

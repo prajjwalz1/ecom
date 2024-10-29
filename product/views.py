@@ -156,8 +156,8 @@ class SearchProduct(APIView,ResponseMixin):
             Q(brand__name__icontains=query)
         ).distinct()
         
-        for result in results:
-            print(result.product_name)
+        # for result in results:
+        #     print(result.product_name)
         # breakpoint()
 
         # Filter by category if provided

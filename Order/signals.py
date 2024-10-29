@@ -12,7 +12,7 @@ from django.core.mail import send_mail
 
 @receiver(post_save, sender=Order)
 def send_admin_notification_on_order(sender, instance, created, **kwargs):
-    if not created :  # Adjust according to your model's payment status field
+    if created:  # Adjust according to your model's payment status field
         print("Signal triggered..................................................")
         shipping_details=instance.shippingdetails.get(order=instance.id)
         print(shipping_details)

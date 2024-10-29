@@ -4,8 +4,8 @@ from product.models import Product
 # Create your models here.
 
 class OrderItem(CustomizedModel):
-    order=models.ForeignKey('Order',on_delete=models.DO_NOTHING)
-    product=models.ForeignKey(Product,on_delete=models.DO_NOTHING)
+    order=models.ForeignKey('Order',on_delete=models.SET_DEFAULT,default="deleted_order")
+    product=models.ForeignKey(Product,on_delete=models.SET_DEFAULT,default="deleted_product")
     quantity=models.IntegerField(null=True,blank=True,default=1)
     purchase_amount=models.DecimalField(decimal_places=2,max_digits=8)
 

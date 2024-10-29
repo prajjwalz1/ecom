@@ -72,8 +72,11 @@ class ProductVariant(models.Model):
 
     def save(self, *args, **kwargs):
         # Automatically set variant_name if color_name, rom, and ram are provided
-        if self.color_name and self.rom and self.ram:
+        if self.color_name and self.rom and self.ram :
             self.variant_name = f"{self.color_name} {self.rom}/{self.ram}"
+        else:
+             self.variant_name = f"{self.color_name} {self.rom}"
+        
         super().save(*args, **kwargs)
 
     def __str__(self):

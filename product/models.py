@@ -71,15 +71,20 @@ class ProductVariant(models.Model):
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     def save(self, *args, **kwargs):
-        # Automatically set variant_name if color_name, rom, and ram are provided
-        if self.color_name and self.rom and self.ram :
+        # Automatically set variant_name based on the presence of color_name, rom, and ram
+        if self.color_name and self.rom and self.ram:
             self.variant_name = f"{self.color_name} {self.rom}/{self.ram}"
-        
-        elif self.color_name ==None and self.ram==None:
-            self.variant_name = f" {self.rom}"
+        elif self.color_name and self.rom:
+            self.variant_name = f"{self.color_name} {self.rom}"
+        elif self.rom and self.ram:
+            self.variant_name = f"{self.rom}/{self.ram}"
+        elif self.color_name:
+            self.variant_name = self.color_name
+        elif self.rom:
+            self.variant_name = self.rom
         else:
-             self.variant_name = f"{self.color_name} {self.rom}"
-        
+            self.variant_name = "Unknown Variant"
+
         super().save(*args, **kwargs)
 
     def __str__(self):

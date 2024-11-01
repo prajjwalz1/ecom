@@ -61,12 +61,15 @@ class HomeView(ResponseMixin,APIView):
                 "tag_name": tag_name,
                 "products": products
             })
+        brands=Brand.objects.all()
+        brands_serializer=BrandSerializer(brands,context={"request":request},many=True)
 
         # Final response structure
         response_data = {
             'section_wise_product': section_wise_data,
             'navbar': self.getnavbar(request),
             'carousel': self.get_carousel_images(request),
+            'brands':brands_serializer.data
         }
 
         # Return the response using your custom success handler

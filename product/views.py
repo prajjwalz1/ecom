@@ -224,3 +224,16 @@ class ProductReviewView(APIView,ResponseMixin):
                    
         return ResponseMixin.handle_success_response(message="product review added successfully",status_code=200,serialized_data=review_serializer.data)
        
+class BrandWiseProducts(APIView,ResponseMixin):
+    def get(self,request):
+        request_type=request.GET.get("request")
+        if request_type=="brandwise_product":
+            return self.BrandwiseProduct(request)
+        
+    def BrandwiseProduct(self,request):
+        brand_id=request.GET.get("brand_id")
+        if not brand_id:
+            return self.handle_error_response(error_message="brand id not sent in query",status_code=400)
+        qs=Product.objects.filter(brand_id=brand_id)
+        serializer=ProductSerializer(qs,many=True,context={"request":request})
+        return self.handle_success_response(serialized_data=serializer.data,status_code=200)

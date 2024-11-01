@@ -35,10 +35,11 @@ class ProductSerializer(serializers.ModelSerializer):
     brand = BrandSerializer(read_only=True)
     images = serializers.SerializerMethodField()  # Assuming images are linked directly to Product
     variants = ProductVariantSerializer(many=True, read_only=True)  # Include variants for price access
+    brand_id=serializers.CharField(source='brand.id')
 
     class Meta:
         model = Product
-        fields = ['id', 'product_name','stock','details', 'product_description', 'images', 'category', 'brand', 'variants']
+        fields = ['id', 'product_name','brand_id','stock','details', 'product_description', 'images', 'category', 'brand', 'variants']
 
     def get_price(self, obj):
         # Optionally return the price of the first variant, adjust as necessary
@@ -57,6 +58,7 @@ class ProductSerializer(serializers.ModelSerializer):
         for variant in obj.variants.all():  # Use .all() to get the queryset
             images.extend(ProductImageSerializer(variant.productvariantsimages.all(), many=True,context=self.context).data)  # Serialize the images
         return images
+    
 class TagSerializer(serializers.ModelSerializer):
     products = serializers.SerializerMethodField()
 

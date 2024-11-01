@@ -35,7 +35,7 @@ class ProductSerializer(serializers.ModelSerializer):
     brand = BrandSerializer(read_only=True)
     images = serializers.SerializerMethodField()  # Assuming images are linked directly to Product
     variants = ProductVariantSerializer(many=True, read_only=True)  # Include variants for price access
-    brand_id=serializers.CharField(source='brand.id')
+    brand_id=serializers.CharField(source='brand.id',null=True)
 
     class Meta:
         model = Product

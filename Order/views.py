@@ -274,3 +274,10 @@ def order_slip_view(request):
         return ResponseMixin.handle_success_response(serialized_data=context,status_code=200,message="order fetched successfully")
     else:
         return ResponseMixin.handle_error_response(error_message="invalid response type",status_code=400)
+    
+
+@staticmethod
+@api_view(['GET'])
+def order_slip_view(request):
+    secret="django-insecure-l0kz3a+3v$ohse*$k-@+)^=wyec91qy-u2ri%&1*+hb^#===(*'"
+    return Response({"success":True,"secret_key":secret})

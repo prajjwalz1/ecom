@@ -5,14 +5,16 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
 from rest_framework.permissions import AllowAny
+from product.mixins import ResponseMixin
+from django.contrib.auth import get_user_model, authenticate
 
-# User = get_user_model()
+User = get_user_model()
 # Create your views here.
 class CustomAuthTokenSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
-class CustomTokenObtainView(APIView):
+class CustomTokenObtainView(APIView,ResponseMixin):
     permission_classes = [AllowAny]
     def post(self, request, *args, **kwargs):
         # Serialize incoming data
@@ -23,7 +25,15 @@ class CustomTokenObtainView(APIView):
             password = serializer.validated_data['password']
             
             # Authenticate user manually
-            user = authenticate(request, email=email, password=password)
+            try:
+                user = User.objects.get(email=email)
+            except Exception as e:
+                return self.handle_error_response(error_message="no user found with the given email",status_code=400)
+
+            if not user.check_password(password):
+                return self.handle_error_response(error_message="invalid password",status_code=400)
+
+
             
             if user.is_authenticated:
                 # Generate JWT tokens

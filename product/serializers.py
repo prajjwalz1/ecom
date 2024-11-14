@@ -174,3 +174,137 @@ class GETReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductReview
         fields = ['id', 'product', 'review', 'replies']
+
+
+from .models import (
+    Category, Brand, Tag, Specification, Product,
+    ProductVariant, ProductVariantPriceHistory, ProductImage,
+    ProductSpecification
+)
+
+# class CategorySerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Category
+#         fields = ['id', 'name', 'description', 'parent_category', 'subcategories']
+        
+# class BrandSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Brand
+#         fields = ['id', 'name', 'image', 'description']
+
+# class TagSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Tag
+#         fields = ['id', 'name', 'section', 'priority']
+
+class SpecificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Specification
+        fields = ['id', 'spec_name', 'category']
+
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'productvariant', 'image', 'alt_text']
+
+class ProductVariantPriceHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductVariantPriceHistory
+        fields = ['id', 'variant', 'price', 'discount_price', 'date_added']
+
+from django.core.files.base import ContentFile
+import base64
+import imghdr
+from io import BytesIO
+
+# class ProductSpecificationSerializer(serializers.ModelSerializer):
+#     spec_name = SpecificationSerializer()
+
+#     class Meta:
+#         model = ProductSpecification
+#         fields = ['id', 'product', 'spec_name', 'value', 'value_unit']
+
+
+
+class Base64ImageField(serializers.ImageField):
+    """
+    Custom serializer field to handle Base64-encoded images.
+    """
+    def to_internal_value(self, data):
+        if isinstance(data, str) and data.startswith('data:image'):
+            try:
+                # Separate the header from the base64 data
+                header, data = data.split('data:image/', 1)
+                format, data = data.split(';base64,', 1)
+                if format == "jpeg":
+                    format = "jpg"
+            except ValueError:
+                raise serializers.ValidationError("Invalid Base64 data")
+
+            decoded_file = base64.b64decode(data)
+            file_name = f"temp.{format}"
+            file = ContentFile(decoded_file, name=file_name)
+            return file
+        return super().to_internal_value(data)
+
+class ProductImageAddSerializer(serializers.ModelSerializer):
+    image = Base64ImageField()
+
+    class Meta:
+        model = ProductImage
+        fields = ['image', 'alt_text']
+
+
+class ProductVariantSerializer(serializers.ModelSerializer):
+    productvariantsimages = ProductImageAddSerializer(many=True)
+
+    class Meta:
+        model = ProductVariant
+        fields = [
+            'variant_name', 'color_code', 'color_name', 'rom',
+            'ram', 'price', 'discount_price', 'productvariantsimages'
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['productvariantsimages'].context.update(self.context)
+
+    def create(self, validated_data):
+        images_data = validated_data.pop('productvariantsimages', [])
+        product_variant = ProductVariant.objects.create(**validated_data)
+        ProductImage.objects.bulk_create(
+            [ProductImage(productvariant=product_variant, **image_data) for image_data in images_data]
+        )
+        return product_variant
+
+class ProductAddSerializer(serializers.ModelSerializer):
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
+    brand = serializers.PrimaryKeyRelatedField(queryset=Brand.objects.all(), allow_null=True)
+    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
+    variants = ProductVariantSerializer(many=True)
+
+    class Meta:
+        model = Product
+        fields = [
+            'product_name', 'product_description', 'category', 'brand',
+            'stock', 'tags', 'details', 'variants'
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['variants'].context.update(self.context)
+
+    def create(self, validated_data):
+        variants_data = validated_data.pop('variants', [])
+        tags_data = validated_data.pop('tags', [])
+        product = Product.objects.create(**validated_data)
+        product.tags.set(tags_data)
+
+        for variant_data in variants_data:
+            images_data = variant_data.pop('productvariantsimages', [])
+            product_variant = ProductVariant.objects.create(product=product, **variant_data)
+            ProductImage.objects.bulk_create(
+                [ProductImage(productvariant=product_variant, **image_data) for image_data in images_data]
+            )
+
+        return product

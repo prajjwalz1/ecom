@@ -240,3 +240,22 @@ class BrandWiseProducts(APIView,ResponseMixin):
         qs=Product.objects.filter(brand_id=brand_id)
         serializer=ProductSerializer(qs,many=True,context={"request":request})
         return self.handle_success_response(serialized_data=serializer.data,status_code=200)
+    
+
+
+class ProductCRUD(APIView,ResponseMixin):
+    def post(self,request):
+        request_type=request.GET.get("request")
+        if request_type=="AddProduct":
+            return self.AddProduct(request)
+    def AddProduct(self,request):
+        data=request.data
+        print(data)
+        serializer=ProductAddSerializer(data=data,context={"request":request})
+        if serializer.is_valid():
+            serializer.save()
+            return self.handle_success_response(serialized_data=serializer.data,status_code=200,message="product added successfully")
+        else:
+            return Response({"success":False,"message":serializer.errors})
+
+

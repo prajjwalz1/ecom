@@ -10,6 +10,8 @@ urlpatterns = [
     path('search-product',SearchProduct.as_view()),
     path('productreview',ProductReviewView.as_view()),
     path('brandwiseproduct',BrandWiseProducts.as_view()),
+    path('productaction',ProductCRUD.as_view()),
+
 
     
 

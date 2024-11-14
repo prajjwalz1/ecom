@@ -56,8 +56,8 @@ class CustomTokenObtainView(APIView,ResponseMixin):
             response_data = {
                 "success":True,
                 "message":"logged in successfully",
-                'access': access_token,
-                'refresh': str(refresh),
+                'access_token': access_token,
+                'refresh_token': str(refresh),
                 'categories': categories_data,
                 'brands': brands_data,
                 'tags': tags_data

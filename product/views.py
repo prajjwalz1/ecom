@@ -259,3 +259,8 @@ class ProductCRUD(APIView,ResponseMixin):
             return Response({"success":False,"message":serializer.errors})
 
 
+
+# class CategoryCrud(APIView,ResponseMixin):
+#     def get(self,request):
+#         request_type=request.GET.get("request")
+#         if request_type=="getallcategory"

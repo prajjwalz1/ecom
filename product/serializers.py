@@ -73,6 +73,12 @@ class TagSerializer(serializers.ModelSerializer):
         return ProductSerializer(products, many=True,context=self.context).data
 
 
+class GetTagSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Tag
+        fields = ['id', 'name','section']
+
 
 
     

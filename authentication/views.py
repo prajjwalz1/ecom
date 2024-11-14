@@ -7,7 +7,8 @@ from django.contrib.auth.models import User
 from rest_framework.permissions import AllowAny
 from product.mixins import ResponseMixin
 from django.contrib.auth import get_user_model, authenticate
-
+from product.models import Category,Brand,Tag
+from product.serializers import BrandSerializer,CategorySerializer,GetTagSerializer
 User = get_user_model()
 # Create your views here.
 class CustomAuthTokenSerializer(serializers.Serializer):
@@ -35,22 +36,34 @@ class CustomTokenObtainView(APIView,ResponseMixin):
 
 
             
-            if user.is_authenticated:
+            # if user.is_authenticated:
                 # Generate JWT tokens
-                refresh = RefreshToken.for_user(user)
-                access_token = str(refresh.access_token)
-                refresh_token = str(refresh)
-                
-                # Return tokens in custom format
-                return Response({
-                    'success': True,
-                    'message': 'Authentication successful',
-                    'access_token': access_token,
-                    'refresh_token': refresh_token,
-                    'token_type': 'Bearer',
-                    'data':[]
-                
-                }, status=status.HTTP_200_OK)
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            refresh_token = str(refresh)
+            
+            # Return tokens in custom format
+            categories = Category.objects.all()
+            brands = Brand.objects.all()
+            tags = Tag.objects.all()
+
+            # Serialize related data
+            categories_data = CategorySerializer(categories, many=True).data
+            brands_data = BrandSerializer(brands, many=True).data
+            tags_data = GetTagSerializer(tags, many=True).data
+
+            # Prepare response data
+            response_data = {
+                "success":True,
+                "message":"logged in successfully",
+                'access': access_token,
+                'refresh': str(refresh),
+                'categories': categories_data,
+                'brands': brands_data,
+                'tags': tags_data
+            }
+
+            return Response(response_data)
             
             return Response({
                 'status': 'error',

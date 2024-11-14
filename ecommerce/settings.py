@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -40,11 +41,15 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'product',
     'rest_framework',
+    'rest_framework_simplejwt',
     'ckeditor',
     'ckeditor_uploader',
     'debug_toolbar',
     'corsheaders',
-    'Order'
+    'Order',
+    'user',
+    'authentication',
+
 
 ]
 
@@ -204,3 +209,22 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL')
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',  # Optional: Control access based on user permissions
+    ),
+}
+
+# Optional: Add settings for JWT token lifetime
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),  # Adjust the access token lifetime as per your requirement
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': False,  # Whether to rotate refresh tokens
+    'BLACKLIST_AFTER_ROTATION': False,  # If True, the old refresh token will be blacklisted
+}
+AUTH_USER_MODEL = 'user.CustomUser'  # Point to your custom user model

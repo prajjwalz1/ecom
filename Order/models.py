@@ -21,7 +21,7 @@ class OrderItem(CustomizedModel):
 
 
 class ShippingDetails(CustomizedModel):
-    order=models.ForeignKey('Order',on_delete=models.DO_NOTHING,related_name='shippingdetails')
+    order=models.OneToOneField('Order',on_delete=models.DO_NOTHING,related_name='shippingdetails')
     country=models.CharField(max_length=255,null=False,blank=False)
     fullname=models.CharField(max_length=255,null=False,blank=False)
     district=models.CharField(max_length=255,null=False,blank=False)
@@ -106,8 +106,8 @@ class Order(CustomizedModel):
     
 
 class PaymentProof(CustomizedModel):
-    order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, null=False, blank=True,default=1)
-    image = models.ImageField(upload_to="paymentscreenshots", null=False, blank=True,)
+    order = models.ForeignKey(Order, on_delete=models.DO_NOTHING)
+    image = models.ImageField(upload_to="paymentscreenshots")
     payment_note = models.CharField(max_length=255, blank=True, null=False)
 
     def __str__(self):

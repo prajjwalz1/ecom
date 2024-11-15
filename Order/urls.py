@@ -6,7 +6,9 @@ urlpatterns = [
     path('checkout',CheckOut.as_view()),
     path('paymentsuccess',eSewaSuccessView.as_view()),
     path('vieworder',order_slip_view),
-    path('getsecretkey',order_slip_view),
+    path('getsecretkey',secretkey),
+    path('uploadpaymentslip',UploadPaymentProofView.as_view()),
+
 
 
 

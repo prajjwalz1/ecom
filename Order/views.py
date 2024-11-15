@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from product.mixins import *
-from .serializers import ShippingSerializer,OrderSerializer
+from .serializers import ShippingSerializer,OrderSerializer,PaymentProofSerializer
 from .models import *
 # Create your views here.
 from django.db import transaction
@@ -278,6 +278,16 @@ def order_slip_view(request):
 
 @staticmethod
 @api_view(['GET'])
-def order_slip_view(request):
+def secretkey(request):
     secret="django-insecure-l0kz3a+3v$ohse*$k-@+)^=wyec91qy-u2ri%&1*+hb^#===(*'"
     return Response({"success":True,"secret_key":secret})
+
+
+
+class UploadPaymentProofView(APIView,ResponseMixin):
+    def post(self, request, *args, **kwargs):
+        serializer = PaymentProofSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return self.handle_success_response(message="success",status_code=200)
+        return self.handle_error_response(error_message=serializer.errors,status_code=400)

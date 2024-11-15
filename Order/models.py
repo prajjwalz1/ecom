@@ -103,3 +103,15 @@ class Order(CustomizedModel):
     payment_status=models.CharField(choices=(("pending","pending"),("processing","procesing"),("completed","completed")),default=None,null=True,blank=True)
     def __str__(self):
         return self.orderid
+    
+
+class PaymentProof(CustomizedModel):
+    order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, null=False, blank=True,default=1)
+    image = models.ImageField(upload_to="paymentscreenshots", null=False, blank=True,)
+    payment_note = models.CharField(max_length=255, blank=True, null=False)
+
+    def __str__(self):
+        if self.order and hasattr(self.order, 'shippingdetails'):
+            return self.order.shippingdetails.phonenumber
+        return "No payment proof available"
+    

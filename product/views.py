@@ -9,6 +9,7 @@ from .models import Product,CarouselImage
 from django.db.models import Q
 from django.core.paginator import Paginator
 from .models import Product, Tag, Category, Brand
+from rest_framework.permissions import IsAuthenticated
 
 
 class HomeView(ResponseMixin,APIView):
@@ -244,6 +245,7 @@ class BrandWiseProducts(APIView,ResponseMixin):
 
 
 class ProductCRUD(APIView,ResponseMixin):
+    permission_classes = [IsAuthenticated]  # Ensure user is authenticated
     def post(self,request):
         request_type=request.GET.get("request")
         if request_type=="AddProduct":

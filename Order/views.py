@@ -231,7 +231,8 @@ def order_slip_view(request):
     # amount_in_words = num2words(total_amount, lang='ne') + ' रुपैया'  # Nepali currency format
 
     # Prepare context with relevant order details
-    shipping_details = order_obj.shippingdetails.get(order=order_obj)
+    print(order_obj)
+    shipping_details = order_obj.shippingdetails
     
     context = {
         'order_date': order_obj.created_at,  

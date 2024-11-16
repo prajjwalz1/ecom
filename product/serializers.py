@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import *
+from django.db import transaction
 
 class TaggedProductSerializer(serializers.Serializer):
     tag = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all())
@@ -18,7 +19,20 @@ class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
         fields = ['id','image', 'alt_text']
-    
+
+
+class ProductdetailsSpecificationSerializer(serializers.ModelSerializer):
+    # Assuming you have a related model for the specifications that stores the name of the specification
+    # We'll use the field `spec_name` to retrieve the human-readable name for the specification.
+
+    name = serializers.CharField(source='spec_name.spec_name')  # Assuming `spec_name` is a foreign key to a Specification model
+    value = serializers.CharField()
+    unit = serializers.CharField(source='value_unit')  # If you use value_unit as the unit of measurement
+
+    class Meta:
+        model = ProductSpecification
+        fields = ['name', 'value', 'unit']
+
 class ProductVariantSerializer(serializers.ModelSerializer):
     images = serializers.SerializerMethodField()  # Use SerializerMethodField for images
 
@@ -33,13 +47,18 @@ class ProductVariantSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     brand = BrandSerializer(read_only=True)
-    images = serializers.SerializerMethodField()  # Assuming images are linked directly to Product
-    variants = ProductVariantSerializer(many=True, read_only=True)  # Include variants for price access
+    images = serializers.SerializerMethodField()  # Collect images across all variants
+    variants = ProductVariantSerializer(many=True, read_only=True)  # Fetch variants, including specifications
     brand_id = serializers.CharField(source='brand.id', allow_null=True)
+    specifications = ProductdetailsSpecificationSerializer(many=True, read_only=True)
+
 
     class Meta:
         model = Product
-        fields = ['id', 'product_name','brand_id','stock','details', 'product_description', 'images', 'category', 'brand', 'variants']
+        fields = [
+            'id', 'product_name', 'brand_id', 'stock', 'details',
+            'product_description', 'images', 'category', 'brand', 'variants','specifications'
+        ]
 
     def get_price(self, obj):
         # Optionally return the price of the first variant, adjust as necessary
@@ -52,12 +71,20 @@ class ProductSerializer(serializers.ModelSerializer):
         if obj.variants.exists():
             return obj.variants.first().discount_price
         return None
+
     def get_images(self, obj):
-        # Use a list comprehension to serialize each image
+        # Collect all images from all variants and return as a list
         images = []
-        for variant in obj.variants.all():  # Use .all() to get the queryset
-            images.extend(ProductImageSerializer(variant.productvariantsimages.all(), many=True,context=self.context).data)  # Serialize the images
+        for variant in obj.variants.all():
+            images.extend(
+                ProductImageSerializer(
+                    variant.productvariantsimages.all(),
+                    many=True,
+                    context=self.context
+                ).data
+            )
         return images
+
     
 class TagSerializer(serializers.ModelSerializer):
     products = serializers.SerializerMethodField()
@@ -260,6 +287,11 @@ class ProductImageAddSerializer(serializers.ModelSerializer):
         model = ProductImage
         fields = ['image', 'alt_text']
 
+class ProductSpecificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductSpecification
+        fields = ['spec_name', 'value', 'value_unit']
+
 
 class ProductVariantSerializer(serializers.ModelSerializer):
     productvariantsimages = ProductImageAddSerializer(many=True)
@@ -268,49 +300,76 @@ class ProductVariantSerializer(serializers.ModelSerializer):
         model = ProductVariant
         fields = [
             'variant_name', 'color_code', 'color_name', 'rom',
-            'ram', 'price', 'discount_price', 'productvariantsimages'
+            'ram', 'price', 'discount_price', 'productvariantsimages',
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['productvariantsimages'].context.update(self.context)
 
-    def create(self, validated_data):
-        images_data = validated_data.pop('productvariantsimages', [])
-        product_variant = ProductVariant.objects.create(**validated_data)
-        ProductImage.objects.bulk_create(
-            [ProductImage(productvariant=product_variant, **image_data) for image_data in images_data]
-        )
-        return product_variant
+
+
 
 class ProductAddSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
     brand = serializers.PrimaryKeyRelatedField(queryset=Brand.objects.all(), allow_null=True)
     tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
+    specifications = ProductSpecificationSerializer(many=True, required=True)
     variants = ProductVariantSerializer(many=True)
 
     class Meta:
         model = Product
         fields = [
-            'product_name', 'product_description', 'category', 'brand',
-            'stock', 'tags', 'details', 'variants'
+            'id',
+            'product_name',
+            'product_description',
+            'category',
+            'brand',
+            'stock',
+            'tags',
+            'details',
+            'specifications',
+            'variants',
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['variants'].context.update(self.context)
+        if 'variants' in self.fields:
+            self.fields['variants'].context.update(self.context)
+
+    def validate(self, data):
+        if not data.get('specifications'):
+            raise serializers.ValidationError({
+                'specifications': "At least one specification is required for the product."
+            })
+        return data
 
     def create(self, validated_data):
+        specifications_data = validated_data.pop('specifications', [])
         variants_data = validated_data.pop('variants', [])
         tags_data = validated_data.pop('tags', [])
-        product = Product.objects.create(**validated_data)
-        product.tags.set(tags_data)
 
-        for variant_data in variants_data:
-            images_data = variant_data.pop('productvariantsimages', [])
-            product_variant = ProductVariant.objects.create(product=product, **variant_data)
-            ProductImage.objects.bulk_create(
-                [ProductImage(productvariant=product_variant, **image_data) for image_data in images_data]
-            )
+        with transaction.atomic():
+            # Create the product
+            product = Product.objects.create(**validated_data)
+            product.tags.set(tags_data)
+
+            # Create product specifications
+            specifications = [
+                ProductSpecification(product=product, **spec_data)
+                for spec_data in specifications_data
+            ]
+            ProductSpecification.objects.bulk_create(specifications)
+
+            # Create product variants
+            for variant_data in variants_data:
+                images_data = variant_data.pop('productvariantsimages', [])
+                product_variant = ProductVariant.objects.create(product=product, **variant_data)
+
+                # Create product images for the variant
+                ProductImage.objects.bulk_create([
+                    ProductImage(productvariant=product_variant, **image_data)
+                    for image_data in images_data
+                ])
 
         return product

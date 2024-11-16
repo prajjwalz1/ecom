@@ -34,9 +34,9 @@ def send_admin_notification_on_order(sender, instance, created, **kwargs):
             f"Your order has been received!\n\n"
             f"Order ID: {instance.id}\n"
             # f"Customer: {instance.customer.name}\n"
-            f"Total Amount: {instance.price_after_discount}\n"
-            f"Payment Status: {instance.payment_status}\n\n"
-            f"View your Order: https://api.infoteckstore.com/order/vieworder?order_id={instance.id}&response_type=template\n\n"
+            f"Total Amount: {instance.order.price_after_discount}\n"
+            f"Payment Status: {instance.order.payment_status}\n\n"
+            f"View your Order: https://api.infoteckstore.com/order/vieworder?order_id={order.id}&response_type=template\n\n"
             "Please log in to the admin panel for further details."
         )
         # Send email to admin

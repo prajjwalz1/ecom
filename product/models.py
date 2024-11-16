@@ -131,7 +131,7 @@ class ProductSpecification(CustomizedModel):
     
     
     def __str__(self) -> str:
-        return f"{self.product.product.product_name} - {self.spec_name.spec_name}: {self.value}"
+        return f"{self.product.product_name} - {self.spec_name.spec_name}: {self.value}"
 
 
 

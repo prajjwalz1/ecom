@@ -11,7 +11,7 @@ from django.core.paginator import Paginator
 from .models import Product, Tag, Category, Brand
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-
+from rest_framework import status
 
 class HomeView(ResponseMixin,APIView):
     def get(self,request):
@@ -263,7 +263,50 @@ class ProductCRUD(APIView,ResponseMixin):
 
 
 
-# class CategoryCrud(APIView,ResponseMixin):
-#     def get(self,request):
-#         request_type=request.GET.get("request")
-#         if request_type=="getallcategory"
+class ProductDependencies(APIView,ResponseMixin):
+    def get(self,request):
+        request_type=request.GET.get("request")
+        if request_type=="get-brands-cat-tags":
+            return self.ProductCrudDependencies(request)
+        else:
+            return self.handle_error_response(error_message="bad request type",status_code=400)
+            
+
+    
+    def ProductCrudDependencies(self,request):
+        categories = Category.objects.all()
+        brands = Brand.objects.all()
+        tags = Tag.objects.all()
+
+        # Serialize related data
+        categories_data = CategorySerializer(categories, many=True).data
+        brands_data = BrandSerializer(brands, many=True).data
+        tags_data = GetTagSerializer(tags, many=True).data
+
+        response_data = {
+
+            'categories': categories_data,
+            'brands': brands_data,
+            'tags': tags_data
+        }
+
+        return self.handle_success_response(serialized_data=response_data,status_code=200,message="success")
+
+
+
+class CategorySpecificationsView(APIView,ResponseMixin):
+    def get(self, request):
+        category_id=request.GET.get("category_id")
+        try:
+            category = Category.objects.get(id=category_id)
+        except Category.DoesNotExist:
+            return Response({'error': 'Category not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Get the root category
+        root_category = category.get_root_category()
+
+        # Fetch specifications for the root category
+        specifications = Specification.objects.filter(category=root_category)
+        serializer = SpecificationSerializer(specifications, many=True)
+
+        return self.handle_success_response(serialized_data=serializer.data,status_code=200,message="success")

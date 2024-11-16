@@ -15,6 +15,16 @@ class Category(CustomizedModel):
 
     def __str__(self):
         return self.name
+    
+    def get_root_category(self):
+        visited = set()  # Keep track of visited categories
+        category = self
+        while category.parent_category is not None:
+            if category.id in visited:
+                raise ValueError("Circular reference detected in category hierarchy")
+            visited.add(category.id)
+            category = category.parent_category
+        return category
 
 # Brand Model
 class Brand(CustomizedModel):

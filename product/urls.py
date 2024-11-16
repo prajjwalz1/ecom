@@ -11,7 +11,11 @@ urlpatterns = [
     path('productreview',ProductReviewView.as_view()),
     path('brandwiseproduct',BrandWiseProducts.as_view()),
     path('productaction',ProductCRUD.as_view()),
+    path('get-category-brands-tags',ProductDependencies.as_view()),
+    path('get-category-based-specification',CategorySpecificationsView.as_view()),
+    
 
+ 
 
     
 

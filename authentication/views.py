@@ -43,14 +43,6 @@ class CustomTokenObtainView(APIView,ResponseMixin):
             refresh_token = str(refresh)
             
             # Return tokens in custom format
-            categories = Category.objects.all()
-            brands = Brand.objects.all()
-            tags = Tag.objects.all()
-
-            # Serialize related data
-            categories_data = CategorySerializer(categories, many=True).data
-            brands_data = BrandSerializer(brands, many=True).data
-            tags_data = GetTagSerializer(tags, many=True).data
 
             # Prepare response data
             response_data = {
@@ -58,9 +50,7 @@ class CustomTokenObtainView(APIView,ResponseMixin):
                 "message":"logged in successfully",
                 'access_token': access_token,
                 'refresh_token': str(refresh),
-                'categories': categories_data,
-                'brands': brands_data,
-                'tags': tags_data
+
             }
 
             return Response(response_data)

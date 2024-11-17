@@ -111,5 +111,9 @@ class PaymentProof(CustomizedModel):
     payment_note = models.CharField(max_length=255, blank=True, null=False)
 
     def __str__(self):
-       order=Order.objects.get(qr_payment_slip=self.id)
+       try:
+            order=Order.objects.get(qr_payment_slip=self.id)
+       except Exception as e:
+           order=None
+    
        return order.shippingdetails.phonenumber if order else None

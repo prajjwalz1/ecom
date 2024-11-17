@@ -113,7 +113,8 @@ class PaymentProof(CustomizedModel):
     def __str__(self):
        try:
             order=Order.objects.get(qr_payment_slip=self.id)
+            return str(order.shippingdetails.phonenumber) if order.shippingdetails else "None"
        except Exception as e:
-           order=None
+           return "None"
     
-       return order.shippingdetails.phonenumber if order.shippingdetails else "None"
+       

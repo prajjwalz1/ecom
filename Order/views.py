@@ -102,6 +102,7 @@ class CheckOut(APIView,ResponseMixin):
         # Create the Order object
         tranx_id=self.generate_transaction_id(order_id)
         order = Order.objects.create(
+            qr_payment_slip_id=request.data.get("payment_slip_id"),
             orderid=order_id,
             cart_amount=cart_amount,
             promotional_discount=promotional_discount,
@@ -287,8 +288,8 @@ def secretkey(request):
 
 class UploadPaymentProofView(APIView,ResponseMixin):
     def post(self, request, *args, **kwargs):
-        serializer = PaymentProofSerializer(data=request.data)
+        serializer = PaymentProofSerializer(data=request.data,context={"request":request})
         if serializer.is_valid():
             serializer.save()
-            return self.handle_success_response(message="success",status_code=200)
+            return self.handle_success_response(message="success",status_code=200,serialized_data=serializer.data)
         return self.handle_error_response(error_message=serializer.errors,status_code=400)

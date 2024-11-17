@@ -92,6 +92,7 @@ class PromoCode(CustomizedModel):
         return self.is_active and (self.start_date <= now) and (self.end_date is None or self.end_date >= now)
     
 class Order(CustomizedModel):
+    qr_payment_slip=models.ForeignKey("PaymentProof", on_delete=models.SET_NULL,null=True,blank=True)
     orderid=models.CharField(max_length=255,null=True,blank=True)
     order_status=models.CharField(choices=(('order_created','New order'),('order_viewed','Order viewed'),('next_delivery','Ready to deliver'),('shipped','shipped'),('product_received','product_received')),default='order_created')
     transaction_uuid=models.CharField(max_length=255,null=True,blank=True)
@@ -106,12 +107,9 @@ class Order(CustomizedModel):
     
 
 class PaymentProof(CustomizedModel):
-    order = models.ForeignKey(Order, on_delete=models.DO_NOTHING)
     image = models.ImageField(upload_to="paymentscreenshots")
     payment_note = models.CharField(max_length=255, blank=True, null=False)
 
     def __str__(self):
-        if self.order and hasattr(self.order, 'shippingdetails'):
-            return self.order.shippingdetails.phonenumber
-        return "No payment proof available"
-    
+       order=Order.objects.get(qr_payment_slip=self.id)
+       return order.shippingdetails.phonenumber if order else None

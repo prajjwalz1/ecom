@@ -17,4 +17,4 @@ class OrderSerializer(serializers.ModelSerializer):
 class PaymentProofSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentProof
-        fields = ['order', 'image', 'payment_note']
+        fields = ['id','image', 'payment_note']

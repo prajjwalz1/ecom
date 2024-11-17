@@ -116,4 +116,4 @@ class PaymentProof(CustomizedModel):
        except Exception as e:
            order=None
     
-       return order.shippingdetails.phonenumber if order else "None"
+       return order.shippingdetails.phonenumber if order.shippingdetails else "None"

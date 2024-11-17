@@ -12,6 +12,11 @@ from .models import Product, Tag, Category, Brand
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
+from rest_framework import generics
+from .models import Brand, Tag, Category, Specification, CarouselImage, Navbar
+from .serializers import BrandSerializer, TagSerializer, CategorySerializer, SpecificationSerializer, CarouselImageSerializer, NavbarSerializer
+
 
 class HomeView(ResponseMixin,APIView):
     def get(self,request):
@@ -246,7 +251,7 @@ class BrandWiseProducts(APIView,ResponseMixin):
 
 
 class ProductCRUD(APIView,ResponseMixin):
-    authentication_classes = [JWTAuthentication]  # Ensure user is authenticated
+    authentication_classes = [JWTAuthentication] # Ensure user is authenticated
     def post(self,request):
         request_type=request.GET.get("request")
         if request_type=="AddProduct":
@@ -264,6 +269,8 @@ class ProductCRUD(APIView,ResponseMixin):
 
 
 class ProductDependencies(APIView,ResponseMixin):
+    authentication_classes = [JWTAuthentication] # Ensure user is authenticated
+
     def get(self,request):
         request_type=request.GET.get("request")
         if request_type=="get-brands-cat-tags":
@@ -295,6 +302,8 @@ class ProductDependencies(APIView,ResponseMixin):
 
 
 class CategorySpecificationsView(APIView,ResponseMixin):
+    authentication_classes = [JWTAuthentication] # Ensure user is authenticated
+
     def get(self, request):
         category_id=request.GET.get("category_id")
         try:
@@ -310,3 +319,137 @@ class CategorySpecificationsView(APIView,ResponseMixin):
         serializer = SpecificationSerializer(specifications, many=True)
 
         return self.handle_success_response(serialized_data=serializer.data,status_code=200,message="success")
+    
+
+
+
+# Brand API Views
+class BrandListCreateView(generics.ListCreateAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = Brand.objects.all()
+    serializer_class = BrandSerializer
+    pagination_class = PageNumberPagination
+
+class BrandRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = Brand.objects.all()
+    serializer_class = BrandSerializer
+
+# Tag API Views
+class TagListCreateView(generics.ListCreateAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = Tag.objects.all()
+    serializer_class = GenericsTagSerializer
+    pagination_class = PageNumberPagination
+
+class TagRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = Tag.objects.all()
+    serializer_class = GenericsTagSerializer
+
+# Category API Views
+class CategoryListCreateView(generics.ListCreateAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    pagination_class = PageNumberPagination
+
+class CategoryRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+# Specification API Views
+class SpecificationListCreateView(generics.ListCreateAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = Specification.objects.all()
+    serializer_class = SpecificationSerializer
+    pagination_class = PageNumberPagination
+
+class SpecificationRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = Specification.objects.all()
+    serializer_class = SpecificationSerializer
+
+# CarouselImage API Views
+class CarouselImageListCreateView(generics.ListCreateAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = CarouselImage.objects.all()
+    serializer_class = CarouselImageSerializer
+    pagination_class = PageNumberPagination
+
+class CarouselImageRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = CarouselImage.objects.all()
+    serializer_class = CarouselImageSerializer
+
+# Navbar API Views
+class NavbarListCreateView(generics.ListCreateAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = Navbar.objects.all()
+    serializer_class = GenericsNavbarSerializer
+    pagination_class = PageNumberPagination
+
+
+class NavbarRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = Navbar.objects.all()
+    serializer_class = GenericsNavbarSerializer
+
+
+class ProductListCreateView(generics.ListCreateAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = Product.objects.all()
+    serializer_class = ProductAddSerializer
+    pagination_class = PageNumberPagination
+
+class ProductRetrieveUpdateDestroyView(ResponseMixin, generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = Product.objects.all()
+    serializer_class = GenericsProductAddSerializer
+
+    def get(self, request, *args, **kwargs):
+        product = self.get_object()
+        serialized_data = self.get_serializer(product).data
+        return self.handle_success_response(
+            status_code=status.HTTP_200_OK,
+            serialized_data=serialized_data
+        )
+
+    def put(self, request, *args, **kwargs):
+        product = self.get_object()
+        serializer = self.get_serializer(product, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return self.handle_success_response(
+                status_code=status.HTTP_200_OK,
+                serialized_data=serializer.data,
+                message="Product updated successfully"
+            )
+        else:
+            return self.handle_serializererror_response(
+                serializer.errors,
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+    def delete(self, request, *args, **kwargs):
+        product = self.get_object()
+        product.delete()
+        return self.handle_success_response(
+            status_code=status.HTTP_204_NO_CONTENT,
+            message="Product deleted successfully"
+        )

@@ -337,12 +337,12 @@ class ProductAddSerializer(serializers.ModelSerializer):
         if 'variants' in self.fields:
             self.fields['variants'].context.update(self.context)
 
-    def validate(self, data):
-        if not data.get('specifications'):
-            raise serializers.ValidationError({
-                'specifications': "At least one specification is required for the product."
-            })
-        return data
+    # def validate(self, data):
+    #     if not data.get('specifications'):
+    #         raise serializers.ValidationError({
+    #             'specifications': "At least one specification is required for the product."
+    #         })
+    #     return data
 
     def create(self, validated_data):
         specifications_data = validated_data.pop('specifications', [])
@@ -373,3 +373,97 @@ class ProductAddSerializer(serializers.ModelSerializer):
                 ])
 
         return product
+    
+
+
+class GenericsTagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ['id', 'name', 'section', 'priority']
+
+
+class GenericsNavbarSerializer(serializers.ModelSerializer):
+    # You can specify which fields are included, or use all fields.
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all(), many=True)
+
+    class Meta:
+        model = Navbar
+        fields = ['id', 'name', 'category']
+
+
+class GenericsProductAddSerializer(serializers.ModelSerializer):
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
+    brand = serializers.PrimaryKeyRelatedField(queryset=Brand.objects.all(), allow_null=True)
+    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
+    specifications = ProductSpecificationSerializer(many=True, required=True)
+    variants = ProductVariantSerializer(many=True, required=False)
+
+    class Meta:
+        model = Product
+        fields = [
+            'id',
+            'product_name',
+            'product_description',
+            'category',
+            'brand',
+            'stock',
+            'tags',
+            'details',
+            'specifications',
+            'variants',
+        ]
+
+    def create(self, validated_data):
+        specifications_data = validated_data.pop('specifications', [])
+        variants_data = validated_data.pop('variants', [])
+        tags_data = validated_data.pop('tags', [])
+
+        # Create the product
+        product = Product.objects.create(**validated_data)
+        product.tags.set(tags_data)
+
+        # Create product specifications
+        for spec_data in specifications_data:
+            ProductSpecification.objects.create(product=product, **spec_data)
+
+        # Create product variants
+        for variant_data in variants_data:
+            images_data = variant_data.pop('productvariantsimages', [])
+            product_variant = ProductVariant.objects.create(product=product, **variant_data)
+
+            # Create product images for the variant
+            ProductImage.objects.bulk_create([ProductImage(productvariant=product_variant, **image_data) for image_data in images_data])
+
+        return product
+
+    def update(self, instance, validated_data):
+        # First, update the basic fields of the product
+        instance.product_name = validated_data.get('product_name', instance.product_name)
+        instance.product_description = validated_data.get('product_description', instance.product_description)
+        instance.category = validated_data.get('category', instance.category)
+        instance.brand = validated_data.get('brand', instance.brand)
+        instance.stock = validated_data.get('stock', instance.stock)
+        instance.details = validated_data.get('details', instance.details)
+        instance.save()
+
+        # Handle tags: Clear existing tags and set the new ones
+        tags_data = validated_data.get('tags', [])
+        instance.tags.set(tags_data)
+
+        # Handle specifications: Clear existing specifications and create new ones
+        specifications_data = validated_data.get('specifications', [])
+        instance.specifications.all().delete()  # Delete existing specifications
+        for spec_data in specifications_data:
+            ProductSpecification.objects.create(product=instance, **spec_data)
+
+        # Handle variants: Clear existing variants and create new ones
+        variants_data = validated_data.get('variants', [])
+        instance.variants.all().delete()  # Delete existing variants
+        for variant_data in variants_data:
+            images_data = variant_data.pop('productvariantsimages', [])
+            product_variant = ProductVariant.objects.create(product=instance, **variant_data)
+
+            # Create product images for the variant
+            ProductImage.objects.bulk_create([ProductImage(productvariant=product_variant, **image_data) for image_data in images_data])
+
+        return instance

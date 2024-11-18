@@ -98,6 +98,7 @@ class Order(CustomizedModel):
     transaction_uuid=models.CharField(max_length=255,null=True,blank=True)
     cart_amount=models.DecimalField(decimal_places=2,max_digits=8)
     promotional_discount=models.DecimalField(decimal_places=2,max_digits=8)
+    promocode_applied=models.BooleanField(default=False)
     promocode_used=models.ForeignKey(PromoCode,null=True,blank=True,on_delete=models.DO_NOTHING)
     price_after_discount=models.DecimalField(decimal_places=2,max_digits=8)
     paid_amount=models.DecimalField(decimal_places=2,max_digits=8,null=True)

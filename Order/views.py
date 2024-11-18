@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from product.mixins import *
-from .serializers import ShippingSerializer,OrderSerializer,PaymentProofSerializer
+from .serializers import ShippingSerializer,OrderSerializer,PaymentProofSerializer,ApplyPromoCodeSerializer
 from .models import *
 # Create your views here.
 from django.db import transaction
@@ -21,6 +21,10 @@ from rest_framework.decorators import api_view
 from django.conf import settings
 import os
 from product.models import ProductVariant
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from .utils import apply_promo_code_to_order
 
 def generate_order_id():
     # Get the current date and time
@@ -91,14 +95,7 @@ class CheckOut(APIView,ResponseMixin):
             cart_amount += price * quantity
 
         # Apply promo code if provided
-        promo_code_data = request.data.get("promo_code")
-        if promo_code_data:
-            promocode = get_object_or_404(PromoCode, code=promo_code_data)
-            promotional_discount = promocode.calculate_discount(cart_amount)  # Assuming a method that calculates discount
-            price_after_discount = cart_amount - promotional_discount
-        else:
-            price_after_discount = cart_amount
-        print(price_after_discount)
+
         # Create the Order object
         tranx_id=self.generate_transaction_id(order_id)
         order = Order.objects.create(
@@ -110,7 +107,33 @@ class CheckOut(APIView,ResponseMixin):
             price_after_discount=price_after_discount,
             transaction_uuid=tranx_id
         )
+        promo_code_data = request.data.get("promo_code")
 
+        if promo_code_data:
+            # Call the apply_promo_code_to_order function
+            promo_response = apply_promo_code_to_order(order_id, promo_code_data)
+
+            # Check if there's an error in the response
+
+                
+
+            # If no error, get the promotional discount from the response
+            if promo_response["success"]==True:
+                promotional_discount = Decimal(promo_response["discount_applicable"])
+
+                # Calculate the price after applying the discount
+                price_after_discount = cart_amount - promotional_discount
+            else:
+                return Response(promo_response, status=promo_response["status"])
+
+        else:
+            # If no promo code is provided, the price is just the cart amount
+            price_after_discount = cart_amount
+        
+        
+        order.price_after_discount=price_after_discount
+        order.save()
+        print(price_after_discount)
         # Attach the order object to the shipping details data
         shipping_details_data["order"] = order.id
 
@@ -143,7 +166,7 @@ class CheckOut(APIView,ResponseMixin):
             return self.handle_serializererror_response(serializer.errors, status_code=400)
         serializer.save()
 
-        return self.handle_success_response(status_code=200, message="Order created successfully",serialized_data={"order_id":order_id,"order_amount":cart_amount,"transaction_uuid":tranx_id})
+        return self.handle_success_response(status_code=200, message="Order created successfully",serialized_data={"order_id":order_id,"order_amount":price_after_discount,"transaction_uuid":tranx_id})
 
 
 
@@ -293,3 +316,99 @@ class UploadPaymentProofView(APIView,ResponseMixin):
             serializer.save()
             return self.handle_success_response(message="success",status_code=200,serialized_data=serializer.data)
         return self.handle_error_response(error_message=serializer.errors,status_code=400)
+    
+
+class Promocode(APIView,ResponseMixin):
+    def post(self,request):
+        promo_code=request.data.get("promo_code")
+        cart_amount=request.data.get("cart_amount")
+        try:
+            promo=PromoCode.objects.get(code=promo_code)
+            
+            if not promo.is_valid():
+                return Response({"error": "Promo code is not valid or has expired."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Check if the promo code has already been used (if limited per user)
+            if promo.limit_users and promo.count >= promo.max_users:
+                return Response({"error": "Promo code usage limit reached."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Check if the promo is service-specific, and if applicable
+            # You can implement your service-specific logic here if needed
+
+            # Calculate the discount
+            if promo.discount_type == PromoCode.DISCOUNT_TYPE_FLAT:
+                # Apply flat discount
+                discount = promo.discount_amount
+                if promo.discount_amount > cart_amount:
+                    discount = cart_amount  # Ensure it doesn't exceed the cart amount
+                return self.handle_success_response(message='success',serialized_data={"discount_amount":discount,"discount_type":promo.discount_type},status_code=200)
+            elif promo.discount_type == PromoCode.DISCOUNT_TYPE_PERCENTAGE:
+                # Apply percentage discount
+                discount = (promo.discount_percentage / 100) * cart_amount
+                if promo.max_discount_amount and discount > promo.max_discount_amount:
+                    discount = promo.max_discount_amount  # Limit to max discount if applicable
+
+                return self.handle_success_response(message='success',serialized_data={"discount_amount":discount,"discount_type":promo.discount_type,"promocode":promo_code},status_code=200)
+        except Exception as e:
+            return self.handle_error_response(error_message="Promocode does not exist",status_code=400)
+
+class ApplyPromoCodeView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes=[JWTAuthentication]
+    @staticmethod
+    def apply(self, request, *args, **kwargs):
+        # Deserialize the input data
+
+
+            order_id = kwargs.get('order_id')
+            promo_code = kwargs.get('promo_code')
+            
+            # Retrieve the order and promo code
+            try:
+                order = Order.objects.get(orderid=order_id)
+            except Order.DoesNotExist:
+                return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+            
+            try:
+                promo = PromoCode.objects.get(code=promo_code)
+            except PromoCode.DoesNotExist:
+                return Response({"error": "Invalid promo code."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Check if promo code is valid
+            if not promo.is_valid():
+                return Response({"error": "Promo code is not valid or has expired."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Check if the promo code has already been used (if limited per user)
+            if promo.limit_users and promo.count >= promo.max_users:
+                return Response({"error": "Promo code usage limit reached."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Check if the promo is service-specific, and if applicable
+            # You can implement your service-specific logic here if needed
+
+            # Calculate the discount
+            if promo.discount_type == PromoCode.DISCOUNT_TYPE_FLAT:
+                # Apply flat discount
+                discount = promo.discount_amount
+                if promo.discount_amount > order.cart_amount:
+                    discount = order.cart_amount  # Ensure it doesn't exceed the cart amount
+            elif promo.discount_type == PromoCode.DISCOUNT_TYPE_PERCENTAGE:
+                # Apply percentage discount
+                discount = (promo.discount_percentage / 100) * order.cart_amount
+                if promo.max_discount_amount and discount > promo.max_discount_amount:
+                    discount = promo.max_discount_amount  # Limit to max discount if applicable
+
+            # Update the order with the promo code details
+            order.promocode_used = promo
+            order.promotional_discount = discount
+            order.price_after_discount = order.cart_amount - discount
+            order.promocode_applied=True
+            
+            # Update the promo code count
+            if promo.limit_users:
+                promo.count += 1
+                promo.save()
+
+            # Save the updated order
+            order.save()
+
+            return discount

@@ -8,6 +8,7 @@ urlpatterns = [
     path('vieworder',order_slip_view),
     path('getsecretkey',secretkey),
     path('uploadpaymentslip',UploadPaymentProofView.as_view()),
+    path('validatepromocode',Promocode.as_view())
 
 
 

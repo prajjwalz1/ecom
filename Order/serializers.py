@@ -18,3 +18,8 @@ class PaymentProofSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentProof
         fields = ['id','image', 'payment_note']
+    
+
+class ApplyPromoCodeSerializer(serializers.Serializer):
+    order_id = serializers.CharField()
+    promo_code = serializers.CharField()

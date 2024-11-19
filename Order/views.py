@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from product.mixins import *
-from .serializers import ShippingSerializer,OrderSerializer,PaymentProofSerializer,ApplyPromoCodeSerializer
+from .serializers import *
 from .models import *
 # Create your views here.
 from django.db import transaction
@@ -25,6 +25,10 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from .utils import apply_promo_code_to_order
+from rest_framework import generics
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.exceptions import MethodNotAllowed
+
 
 def generate_order_id():
     # Get the current date and time
@@ -412,3 +416,43 @@ class ApplyPromoCodeView(APIView):
             order.save()
 
             return discount
+    
+
+class PromocodeListCreateView(generics.ListCreateAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = PromoCode.objects.all()
+    serializer_class = PromocodeSerializer
+    pagination_class = PageNumberPagination
+
+class PromocodeRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = PromoCode.objects.all()
+    serializer_class = PromocodeSerializer
+
+
+class OrderListCreateView(generics.ListCreateAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = Order.objects.all()
+    serializer_class = OrderGenericsSerializer
+    pagination_class = PageNumberPagination
+
+    def get(self, request, *args, **kwargs):
+        """
+        Handle GET requests for listing orders.
+        """
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        """
+        Disable POST request (creation of orders).
+        """
+        raise MethodNotAllowed("POST method is not allowed on this endpoint.")
+
+class OrderRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = Order.objects.all()
+    serializer_class = OrderGenericsSerializer

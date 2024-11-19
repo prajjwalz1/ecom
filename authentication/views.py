@@ -94,3 +94,30 @@ class CustomTokenRefreshView(APIView):
                 "errors": serializer.errors
             }
             return Response(error_data, status=status.HTTP_400_BAD_REQUEST)
+        
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework_simplejwt.views import TokenRefreshView
+
+class CustomTokenRefreshView(TokenRefreshView):
+    def post(self, request, *args, **kwargs):
+        # Optionally, add custom logic here
+        try:
+            response = super().post(request, *args, **kwargs)
+            # Custom response modification (if needed)
+            data = response.data
+            print(data)
+            data['message'] = 'Token refreshed successfully'
+            # return Response(data, status=response.status_code)
+            data = {
+                "success": True,
+                "message": "new token generated successfully , expiry time is 5 minutes",
+                "data": {
+                    "access_token": data.get("access")
+                }
+            }
+            return Response(data)
+        except Exception as e:
+            return Response(
+                {"success":False,'message': 'Invalid refresh token'},
+                status=status.HTTP_400_BAD_REQUEST
+            )

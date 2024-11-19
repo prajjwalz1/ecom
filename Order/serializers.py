@@ -1,4 +1,4 @@
-from .models import ShippingDetails,Order,OrderItem,PaymentProof
+from .models import *
 from rest_framework import serializers
 
 
@@ -23,3 +23,14 @@ class PaymentProofSerializer(serializers.ModelSerializer):
 class ApplyPromoCodeSerializer(serializers.Serializer):
     order_id = serializers.CharField()
     promo_code = serializers.CharField()
+
+
+class PromocodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PromoCode
+        fields = '__all__'
+
+class OrderGenericsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=Order
+        fields="__all__"

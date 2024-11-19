@@ -80,7 +80,6 @@ class PromoCode(CustomizedModel):
     count=models.IntegerField(default=0,editable=False)
     limit_users=models.BooleanField(default=False, help_text="Is the promo code limited in number?")
     max_users=models.IntegerField(default=0)
-    service_specific=models.BooleanField(default=False, help_text="Is the promo code service specific?")
 
     def __str__(self):
         return self.code

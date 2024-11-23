@@ -28,6 +28,7 @@ from .utils import apply_promo_code_to_order
 from rest_framework import generics
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import MethodNotAllowed
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 
 
 def generate_order_id():
@@ -440,6 +441,25 @@ class OrderListCreateView(generics.ListCreateAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderGenericsSerializer
     pagination_class = PageNumberPagination
+
+    def get_queryset(self):
+        """
+        Optionally restricts the returned products to a search term using PostgreSQL full-text search.
+        """
+        queryset = super().get_queryset()
+        search_term = self.request.query_params.get('search', None)
+        if search_term:
+            queryset = queryset.annotate(
+                search_vector=SearchVector('cart_amount', 'orderid', 'shippingdetails__fullname','shippingdetails__phonenumber','shippingdetails__email'),
+            )
+
+            search_query = SearchQuery(search_term)
+            queryset = queryset.annotate(
+                search_rank=SearchRank('search_vector', search_query),
+            ).filter(
+                search_vector=search_query
+            ).order_by('-search_rank') 
+        return queryset
     
     def get_serializer_context(self):
         """

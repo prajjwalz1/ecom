@@ -8,7 +8,7 @@ class OrderItem(CustomizedModel):
         'Order',
         on_delete=models.SET_NULL,
         null=True,
-        blank=True
+        blank=True,related_name='orderitems'
     )
     product = models.ForeignKey(
         Product,

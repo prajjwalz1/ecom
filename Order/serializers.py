@@ -8,7 +8,7 @@ class ShippingSerializer(serializers.ModelSerializer):
         fields="__all__"
 
 
-class OrderSerializer(serializers.ModelSerializer):
+class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model=OrderItem
         fields="__all__"
@@ -32,6 +32,7 @@ class PromocodeSerializer(serializers.ModelSerializer):
 
 class OrderGenericsSerializer(serializers.ModelSerializer):
     shippingdetails = ShippingSerializer()
+    orderitems=OrderItemSerializer(many=True)
     class Meta:
         model=Order
         fields="__all__"

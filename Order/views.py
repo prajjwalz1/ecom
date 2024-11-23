@@ -102,8 +102,10 @@ class CheckOut(APIView,ResponseMixin):
 
         # Create the Order object
         tranx_id=self.generate_transaction_id(order_id)
+        payment_slipid=request.data.get("payment_slip_id")
+        payment_proof_instance=PaymentProof.objects.get(id=payment_slipid)
         order = Order.objects.create(
-            qr_payment_slip_id=request.data.get("payment_slip_id"),
+            qr_payment_slip=payment_proof_instance,
             orderid=order_id,
             cart_amount=cart_amount,
             promotional_discount=promotional_discount,
@@ -438,12 +440,12 @@ class OrderListCreateView(generics.ListCreateAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderGenericsSerializer
     pagination_class = PageNumberPagination
-
-    def get(self, request, *args, **kwargs):
+    
+    def get_serializer_context(self):
         """
-        Handle GET requests for listing orders.
+        Add the request to the serializer's context.
         """
-        return super().get(request, *args, **kwargs)
+        return {"request": self.request}
 
     def post(self, request, *args, **kwargs):
         """
@@ -454,5 +456,5 @@ class OrderListCreateView(generics.ListCreateAPIView):
 class OrderRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     authentication_classes=[JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    queryset = Order.objects.all()
+    queryset = Order.objects.all().select_related('shippingdetails')
     serializer_class = OrderGenericsSerializer

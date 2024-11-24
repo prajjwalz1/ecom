@@ -20,6 +20,10 @@ class ProductImageSerializer(serializers.ModelSerializer):
         model = ProductImage
         fields = ['id','image', 'alt_text']
 
+class GenericsTagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ['id', 'name', 'section', 'priority']
 
 class ProductdetailsSpecificationSerializer(serializers.ModelSerializer):
     # Assuming you have a related model for the specifications that stores the name of the specification
@@ -58,6 +62,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     brand = BrandSerializer(read_only=True)
+    tags = GenericsTagSerializer(read_only=True,many=True)
     images = serializers.SerializerMethodField()  # Collect images across all variants
     variants = ProductVariantSerializer(many=True, read_only=True)  # Fetch variants, including specifications
     brand_id = serializers.CharField(source='brand.id', allow_null=True)
@@ -68,7 +73,7 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             'id', 'product_name', 'brand_id', 'stock', 'details',
-            'product_description', 'images', 'category', 'brand', 'variants','specifications'
+            'product_description', 'images', 'category', 'brand', 'variants','specifications','tags'
         ]
 
     def get_price(self, obj):

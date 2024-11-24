@@ -151,8 +151,11 @@ class CheckOut(APIView,ResponseMixin):
                 product_id = item.get("product_id")
                 quantity = item.get("quantity", 1)
                 variant_id=item.get("product_variant_id")
+                product_color_id=item.get("product_color_id")
                 
                 product = get_object_or_404(Product, id=product_id)
+                product_variant = get_object_or_404(ProductVariant, id=variant_id)
+                product_color = get_object_or_404(VariantColors, id=product_color_id)
                 purchase_amount = variant_price_map.get(variant_id)
 
                 # Create an OrderItem instance and add it to the list
@@ -160,7 +163,9 @@ class CheckOut(APIView,ResponseMixin):
                     order=order,
                     product=product,
                     quantity=quantity,
-                    purchase_amount=purchase_amount
+                    purchase_amount=purchase_amount,
+                    product_variant=product_variant,
+                    product_color=product_color.color
                 )
                 order_items.append(order_item)
 
@@ -173,7 +178,7 @@ class CheckOut(APIView,ResponseMixin):
             return self.handle_serializererror_response(serializer.errors, status_code=400)
         serializer.save()
 
-        return self.handle_success_response(status_code=200, message="Order created successfully",serialized_data={"order_id":order_id,"order_amount":price_after_discount,"transaction_uuid":tranx_id})
+        return self.handle_success_response(status_code=200, message="Order created successfully",serialized_data={"id":order.id, "order_id":order_id,"order_amount":price_after_discount,"transaction_uuid":tranx_id})
 
 
 
@@ -242,7 +247,7 @@ def order_slip_view(request):
     order_id=request.GET.get("order_id")
     response_type=request.GET.get("response_type")
     order_obj = get_object_or_404(
-        Order.objects.prefetch_related('orderitem_set__product','shippingdetails'),
+        Order.objects.prefetch_related('orderitems','shippingdetails'),
         id=order_id
     )
     
@@ -294,7 +299,7 @@ def order_slip_view(request):
                 'unit_price': item.purchase_amount,
                 'amount': item.quantity * item.purchase_amount
             }
-            for index, item in enumerate(order_obj.orderitem_set.all())
+            for index, item in enumerate(order_obj.orderitems.all())
         ],
         'amount_in_words': amount_in_words
     }

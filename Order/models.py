@@ -1,6 +1,6 @@
 from django.db import models
 from product.mixins import *
-from product.models import Product
+from product.models import Product,ProductVariant,VariantColors
 # Create your models here.
 
 class OrderItem(CustomizedModel):
@@ -16,8 +16,13 @@ class OrderItem(CustomizedModel):
         null=True,
         blank=True
     )
+    product_variant=models.ForeignKey(ProductVariant,on_delete=models.SET_NULL,null=True,blank=True)
+    product_color=models.CharField(max_length=255,null=True,blank=True,editable=False)
     quantity=models.IntegerField(null=True,blank=True,default=1)
     purchase_amount=models.DecimalField(decimal_places=2,max_digits=8)
+
+    def __str__(self):
+        return f"{self.product.product_name}"
 
 
 class ShippingDetails(CustomizedModel):

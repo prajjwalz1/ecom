@@ -13,6 +13,18 @@ class OrderItemSerializer(serializers.ModelSerializer):
         model=OrderItem
         fields="__all__"
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        
+        # Replace the product ID with the product_name
+        # Assuming that the `OrderItem` model has a ForeignKey relationship to `Product` named `product`
+        representation['product'] = instance.product.product_name
+        representation['product_variant'] = instance.product.product_name
+        representation['product_color'] = instance.product_color
+        
+        return representation
+
+
 
 class PaymentProofSerializer(serializers.ModelSerializer):
     class Meta:
@@ -39,7 +51,6 @@ class OrderGenericsSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        print(representation)
         payment_slip = instance.qr_payment_slip
         request = self.context.get("request")  # Access the request
         if payment_slip and payment_slip.image:

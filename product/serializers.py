@@ -35,14 +35,25 @@ class ProductdetailsSpecificationSerializer(serializers.ModelSerializer):
 
 class ProductVariantSerializer(serializers.ModelSerializer):
     images = serializers.SerializerMethodField()  # Use SerializerMethodField for images
+    color_available = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductVariant
-        fields = ['id', 'price','variant_name', 'color_code', 'color_name', 'ram', 'rom', 'discount_price', 'images']
+        fields = ['id', 'price','variant_name', 'color_available', 'ram', 'rom', 'discount_price', 'images']
 
     def get_images(self, obj):
         # Use the ProductImageSerializer to serialize related images
         return ProductImageSerializer(obj.productvariantsimages.all(), many=True,context=self.context).data  # Serialize images directly
+    
+    def get_color_available(self, obj):
+        """
+        This method will return a list of dictionaries containing the id and color name
+        for each color associated with the ProductVariant.
+        """
+        # Fetch the related colors from the ManyToMany relationship
+        colors = obj.color_available.all()
+        return [{'id': color.id, 'color': color.color,'color_code':color.color_code} for color in colors]
+    
 
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
@@ -293,13 +304,23 @@ class ProductSpecificationSerializer(serializers.ModelSerializer):
         fields = ['spec_name', 'value', 'value_unit']
 
 
-class ProductVariantSerializer(serializers.ModelSerializer):
+class ProductVaraintColorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VariantColors
+        fields = ['id', 'color_code', 'color']
+
+
+class ProductVariantSerializerForAdd(serializers.ModelSerializer):
     productvariantsimages = ProductImageAddSerializer(many=True)
+    color_available = serializers.PrimaryKeyRelatedField(
+        queryset=VariantColors.objects.all(),
+        many=True
+    )
 
     class Meta:
         model = ProductVariant
         fields = [
-            'variant_name', 'color_code', 'color_name', 'rom',
+            'variant_name', 'rom','color_available',
             'ram', 'price', 'discount_price', 'productvariantsimages',
         ]
 
@@ -315,7 +336,7 @@ class ProductAddSerializer(serializers.ModelSerializer):
     brand = serializers.PrimaryKeyRelatedField(queryset=Brand.objects.all(), allow_null=True)
     tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
     specifications = ProductSpecificationSerializer(many=True, required=True)
-    variants = ProductVariantSerializer(many=True)
+    variants = ProductVariantSerializerForAdd(many=True)
 
     class Meta:
         model = Product
@@ -337,17 +358,11 @@ class ProductAddSerializer(serializers.ModelSerializer):
         if 'variants' in self.fields:
             self.fields['variants'].context.update(self.context)
 
-    # def validate(self, data):
-    #     if not data.get('specifications'):
-    #         raise serializers.ValidationError({
-    #             'specifications': "At least one specification is required for the product."
-    #         })
-    #     return data
-
     def create(self, validated_data):
         specifications_data = validated_data.pop('specifications', [])
         variants_data = validated_data.pop('variants', [])
         tags_data = validated_data.pop('tags', [])
+        
 
         with transaction.atomic():
             # Create the product
@@ -363,9 +378,11 @@ class ProductAddSerializer(serializers.ModelSerializer):
 
             # Create product variants
             for variant_data in variants_data:
+                colors=variant_data.pop('color_available',[])
                 images_data = variant_data.pop('productvariantsimages', [])
                 product_variant = ProductVariant.objects.create(product=product, **variant_data)
-
+                product_variant.color_available.set(colors)
+                product_variant.save()
                 # Create product images for the variant
                 ProductImage.objects.bulk_create([
                     ProductImage(productvariant=product_variant, **image_data)
@@ -396,7 +413,7 @@ class GenericsProductAddSerializer(serializers.ModelSerializer):
     brand = serializers.PrimaryKeyRelatedField(queryset=Brand.objects.all(), allow_null=True)
     tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
     specifications = ProductSpecificationSerializer(many=True, required=True)
-    variants = ProductVariantSerializer(many=True, required=False)
+    variants = ProductVariantSerializerForAdd(many=True, required=False)
 
     class Meta:
         model = Product

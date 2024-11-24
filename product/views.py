@@ -259,7 +259,7 @@ class ProductCRUD(APIView,ResponseMixin):
             return self.AddProduct(request)
     def AddProduct(self,request):
         data=request.data
-        print(data)
+        # print(data)
         serializer=ProductAddSerializer(data=data,context={"request":request})
         if serializer.is_valid():
             serializer.save()
@@ -416,23 +416,8 @@ class ProductListCreateView(generics.ListCreateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductAddSerializer
     pagination_class = PageNumberPagination
-    
-    def get_queryset(self):
-        """
-        Optionally restricts the returned products to a search term using PostgreSQL full-text search.
-        """
-        queryset = super().get_queryset()
-        search_term = self.request.query_params.get('search', None)
-        if search_term:
-            # Use SearchVector for full-text search on specified fields
-            search_vector = SearchVector('name', 'description', 'category__name', 'brand__name')
-            search_query = SearchQuery(search_term)
-            queryset = queryset.annotate(
-                search_rank=SearchRank(search_vector, search_query)
-            ).filter(
-                search_vector=search_query
-            ).order_by('-search_rank')  # Order by relevance
-        return queryset
+
+
 
 class ProductRetrieveUpdateDestroyView(ResponseMixin, generics.RetrieveUpdateDestroyAPIView):
     authentication_classes=[JWTAuthentication]

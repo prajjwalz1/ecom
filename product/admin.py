@@ -53,22 +53,16 @@ class ProductImageInline(admin.TabularInline):
 @admin.register(ProductVariant)
 class ProductVariantAdmin(admin.ModelAdmin):
     inlines = [ProductImageInline]
-    list_display = ['product', 'variant_name', 'color_name', 'rom', 'ram', 'price', 'discount_price']
-    fields= ['product', 'color_name', 'rom', 'ram', 'price', 'discount_price']
+    list_display = ['product', 'variant_name', 'rom', 'ram', 'price', 'discount_price']
+    fields= ['product', 'rom', 'ram', 'price', 'discount_price']
 
 class ProductVariantInline(admin.TabularInline):
     model = ProductVariant
     extra = 0
-    fields=['color_name','rom','ram','price','discount_price']
-    # inlines = [ProductVariantPriceHistoryInline, ProductImageInline]
-# product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
-#     variant_name = models.CharField(max_length=255, null=True, blank=True)
-#     color_code = models.CharField(max_length=255, null=True, blank=True)
-#     color_name = models.CharField(max_length=255, null=True, blank=True)
-#     rom = models.CharField(max_length=255, null=True, blank=True)
-#     ram = models.CharField(max_length=255, null=True, blank=True)
-#     price = models.DecimalField(max_digits=10, decimal_places=2)
-#     discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    fields=['rom','ram','price','discount_price','color_available']
+
+
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('product_name', 'category', 'brand', 'stock')
@@ -125,3 +119,4 @@ class NavbarAdmin(admin.ModelAdmin):
 
 
 
+admin.site.register(VariantColors)

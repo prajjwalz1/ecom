@@ -23,7 +23,7 @@ def apply_promo_code_to_order(order_id, promo_code):
         promo = PromoCode.objects.get(code=promo_code)
         
     except PromoCode.DoesNotExist:
-        return {"success": False, "status": status.HTTP_400_BAD_REQUEST}
+        return {"success": False, "status": status.HTTP_400_BAD_REQUEST,"message":"promocode does noty exist"}
     
     # Check if promo code is valid
     if not promo.is_valid():

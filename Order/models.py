@@ -22,7 +22,7 @@ class OrderItem(CustomizedModel):
     purchase_amount=models.DecimalField(decimal_places=2,max_digits=8)
 
     def __str__(self):
-        return f"{self.product.product_name}" if self.product else None
+        return f"{self.product.product_name}" if self.product else str(None)
 
 
 class ShippingDetails(CustomizedModel):

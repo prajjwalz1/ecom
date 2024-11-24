@@ -18,8 +18,8 @@ class OrderItemSerializer(serializers.ModelSerializer):
         
         # Replace the product ID with the product_name
         # Assuming that the `OrderItem` model has a ForeignKey relationship to `Product` named `product`
-        representation['product'] = instance.product.product_name
-        representation['product_variant'] = instance.product.product_name
+        representation['product'] = instance.product.product_name if instance.product else None
+        representation['product_variant'] = instance.product_variant.variant_name if instance.product_variant else None
         representation['product_color'] = instance.product_color
         
         return representation

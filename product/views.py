@@ -285,17 +285,20 @@ class ProductDependencies(APIView,ResponseMixin):
         categories = Category.objects.all()
         brands = Brand.objects.all()
         tags = Tag.objects.all()
+        colors=VariantColors.objects.all()
 
         # Serialize related data
         categories_data = CategorySerializer(categories, many=True).data
         brands_data = BrandSerializer(brands, many=True).data
         tags_data = GetTagSerializer(tags, many=True).data
+        colors_data = ProductVaraintColorSerializer(colors, many=True).data
 
         response_data = {
 
             'categories': categories_data,
             'brands': brands_data,
-            'tags': tags_data
+            'tags': tags_data,
+            'colors':colors_data
         }
 
         return self.handle_success_response(serialized_data=response_data,status_code=200,message="success")

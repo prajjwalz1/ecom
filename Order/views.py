@@ -443,7 +443,7 @@ class PromocodeRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 class OrderListCreateView(generics.ListCreateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    queryset = Order.objects.all()
+    queryset = Order.objects.all().order_by('-created_at')
     serializer_class = OrderGenericsSerializer
     pagination_class = PageNumberPagination
 

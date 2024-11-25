@@ -417,7 +417,7 @@ class GenericsProductAddSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
     brand = serializers.PrimaryKeyRelatedField(queryset=Brand.objects.all(), allow_null=True)
     tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
-    specifications = ProductSpecificationSerializer(many=True, required=True)
+    specifications = ProductSpecificationSerializer(many=True, required=False)  # Made this optional
     variants = ProductVariantSerializerForAdd(many=True, required=False)
 
     class Meta:
@@ -450,16 +450,24 @@ class GenericsProductAddSerializer(serializers.ModelSerializer):
 
         # Create product variants
         for variant_data in variants_data:
+            colors_data = variant_data.pop('color_available', [])
             images_data = variant_data.pop('productvariantsimages', [])
-            product_variant = ProductVariant.objects.create(product=product, **variant_data)
 
-            # Create product images for the variant
-            ProductImage.objects.bulk_create([ProductImage(productvariant=product_variant, **image_data) for image_data in images_data])
+            # Create the product variant
+            product_variant = ProductVariant.objects.create(product=product, **variant_data)
+            product_variant.color_available.set(colors_data)  # Set available colors
+
+            # Create product images for the variant and associate them
+            created_images = [ProductImage(productvariant=product_variant, **image_data) for image_data in images_data]
+            ProductImage.objects.bulk_create(created_images)
+
+            # Now link images to the product variant
+            product_variant.productvariantsimages.set(created_images)
 
         return product
 
     def update(self, instance, validated_data):
-        # First, update the basic fields of the product
+        # Update the basic fields of the product
         instance.product_name = validated_data.get('product_name', instance.product_name)
         instance.product_description = validated_data.get('product_description', instance.product_description)
         instance.category = validated_data.get('category', instance.category)
@@ -468,24 +476,36 @@ class GenericsProductAddSerializer(serializers.ModelSerializer):
         instance.details = validated_data.get('details', instance.details)
         instance.save()
 
-        # Handle tags: Clear existing tags and set the new ones
+        # Handle tags: If tags are provided, update them
         tags_data = validated_data.get('tags', [])
-        instance.tags.set(tags_data)
+        if tags_data:
+            instance.tags.set(tags_data)
 
-        # Handle specifications: Clear existing specifications and create new ones
+        # Handle specifications: If new specifications are provided, update them
         specifications_data = validated_data.get('specifications', [])
-        instance.specifications.all().delete()  # Delete existing specifications
-        for spec_data in specifications_data:
-            ProductSpecification.objects.create(product=instance, **spec_data)
+        if specifications_data:
+            instance.specifications.all().delete()  # Delete existing specifications if any
+            for spec_data in specifications_data:
+                ProductSpecification.objects.create(product=instance, **spec_data)
 
-        # Handle variants: Clear existing variants and create new ones
+        # Handle variants: If variants are provided, update them
         variants_data = validated_data.get('variants', [])
-        instance.variants.all().delete()  # Delete existing variants
-        for variant_data in variants_data:
-            images_data = variant_data.pop('productvariantsimages', [])
-            product_variant = ProductVariant.objects.create(product=instance, **variant_data)
+        if variants_data:
+            # Delete existing variants if any
+            instance.variants.all().delete()
+            for variant_data in variants_data:
+                colors_data = variant_data.pop('color_available', [])
+                images_data = variant_data.pop('productvariantsimages', [])
 
-            # Create product images for the variant
-            ProductImage.objects.bulk_create([ProductImage(productvariant=product_variant, **image_data) for image_data in images_data])
+                # Create or update the product variant
+                product_variant = ProductVariant.objects.create(product=instance, **variant_data)
+                product_variant.color_available.set(colors_data)  # Set available colors
+
+                # Create product images for the variant
+                created_images = [ProductImage(productvariant=product_variant, **image_data) for image_data in images_data]
+                ProductImage.objects.bulk_create(created_images)
+
+                # Link images to the product variant
+                product_variant.productvariantsimages.set(created_images)
 
         return instance

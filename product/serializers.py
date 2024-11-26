@@ -301,7 +301,7 @@ class ProductImageAddSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductImage
-        fields = ['image', 'alt_text']
+        fields = ['id','image', 'alt_text']
 
 class ProductSpecificationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -325,7 +325,7 @@ class ProductVariantSerializerForAdd(serializers.ModelSerializer):
     class Meta:
         model = ProductVariant
         fields = [
-            'variant_name', 'rom','color_available',
+            'id','variant_name', 'rom','color_available',
             'ram', 'price', 'discount_price', 'productvariantsimages',
         ]
 

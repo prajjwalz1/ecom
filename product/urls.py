@@ -45,4 +45,8 @@ urlpatterns = [
     path('products/<int:pk>/', views.ProductRetrieveUpdateDestroyView.as_view(), name='product-retrieve-update-destroy'),
 
 
+    path('productimage/', views.ProductImageCreateView.as_view(), name='productimage-list-create'),
+    path('productimage/<int:pk>/', views.ProductImageUpdateDestroyView.as_view(), name='productimage-update-destroy'),
+
+
 ]

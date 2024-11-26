@@ -459,3 +459,17 @@ class ProductRetrieveUpdateDestroyView(ResponseMixin, generics.RetrieveUpdateDes
             status_code=status.HTTP_204_NO_CONTENT,
             message="Product deleted successfully"
         )
+    
+
+class ProductImageCreateView(generics.ListCreateAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = ProductImage.objects.all()
+    serializer_class = ProductImageSerializer
+    pagination_class = PageNumberPagination
+   
+class ProductImageUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = ProductImage.objects.all()
+    serializer_class = ProductImageSerializer

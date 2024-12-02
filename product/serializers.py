@@ -509,3 +509,25 @@ class GenericsProductAddSerializer(serializers.ModelSerializer):
                 product_variant.productvariantsimages.set(created_images)
 
         return instance
+
+
+
+class ProductGenericsVariantSerializer(serializers.ModelSerializer):
+
+    color_available = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=VariantColors.objects.all(),
+    )
+    
+    class Meta:
+        model = ProductVariant  # Replace with your actual model name
+        fields = [
+            'id',  # Include the ID field if needed
+            'product',
+            'variant_name',
+            'color_available',
+            'rom',
+            'ram',
+            'price',
+            'discount_price',
+        ]

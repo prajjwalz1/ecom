@@ -48,5 +48,8 @@ urlpatterns = [
     path('productimage/', views.ProductImageCreateView.as_view(), name='productimage-list-create'),
     path('productimage/<int:pk>/', views.ProductImageUpdateDestroyView.as_view(), name='productimage-update-destroy'),
 
+    path('productvariant/', views.ProductVariantListCreateView.as_view(), name='productvariant-list-create'),
+    path('productvariant/<int:pk>/', views.ProductVariantUpdateDestroy.as_view(), name='productvariant-update-destroy'),
+
 
 ]

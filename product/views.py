@@ -473,3 +473,18 @@ class ProductImageUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     queryset = ProductImage.objects.all()
     serializer_class = ProductImageSerializer
+
+class ProductVariantListCreateView(generics.ListCreateAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = ProductVariant.objects.all()
+    serializer_class = ProductGenericsVariantSerializer
+    pagination_class = PageNumberPagination
+
+
+class ProductVariantUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = ProductVariant.objects.all()
+    serializer_class = ProductGenericsVariantSerializer
+    pagination_class = PageNumberPagination

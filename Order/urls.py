@@ -12,7 +12,8 @@ urlpatterns = [
     path('promocode',PromocodeListCreateView.as_view()),
     path('promocode/<int:pk>/',PromocodeRetrieveUpdateDestroyView.as_view()),
     path('',OrderListCreateView.as_view()),
-    path('<int:pk>/',OrderRetrieveUpdateDestroyView.as_view())
+    path('<int:pk>/',OrderRetrieveUpdateDestroyView.as_view()),
+    path('order-insights/monthly/', MonthlyOrderInsightsAPIView.as_view(), name='monthly-order-insights'),
 
 
 
@@ -20,4 +21,3 @@ urlpatterns = [
 
 ]
   
-

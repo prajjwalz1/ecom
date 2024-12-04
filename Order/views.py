@@ -29,7 +29,11 @@ from rest_framework import generics
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import MethodNotAllowed
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
-
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.db.models import Sum, Avg, Count, Q
+from django.db.models.functions import TruncMonth
+from .models import Order
 
 def generate_order_id():
     # Get the current date and time
@@ -483,3 +487,36 @@ class OrderRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     queryset = Order.objects.all().select_related('shippingdetails')
     serializer_class = OrderGenericsSerializer
+
+
+class MonthlyOrderInsightsAPIView(APIView):
+    def get(self, request, *args, **kwargs):
+        orders = (
+            Order.objects.filter(deleted_at__isnull=True)  # Exclude soft-deleted records
+            .annotate(month=TruncMonth('created_at'))  # Group by month
+            .values('month')
+            .annotate(
+                total_orders=Count('id'),
+                paid_orders=Count('id', filter=Q(payment_status='completed')),
+                delivered_orders=Count('id', filter=Q(order_status='product_received')),
+                shipped_orders=Count('id', filter=Q(order_status='shipped')),
+                confirmed_orders=Count('id', filter=Q(order_status='next_delivery')),
+                average_paid_amount=Sum('paid_amount'),  # Calculate the average paid amount
+            )
+            .order_by('month')
+        )
+
+        insights = [
+            {
+                "month": order['month'].strftime('%B %Y'),
+                "total_orders": order['total_orders'],
+                "paid_orders": order['paid_orders'],
+                "delivered_orders": order['delivered_orders'],
+                "shipped_orders": order['shipped_orders'],
+                "confirmed_orders": order['confirmed_orders'],
+                "credited_amount": order['average_paid_amount'] or 0,  # Default to 0 if None
+            }
+            for order in orders
+        ]
+
+        return Response({"success":True,"message":"Success","insight":insights})

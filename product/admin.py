@@ -76,6 +76,9 @@ class ProductAdmin(admin.ModelAdmin):
                 'product_name', 
                 'product_description', 
                 'category', 
+                'product_price',
+                'discount_price',
+
                 'brand', 
                 'stock', 
                 'tags',

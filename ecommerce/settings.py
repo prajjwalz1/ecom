@@ -224,3 +224,9 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': False,  # If True, the old refresh token will be blacklisted
 }
 AUTH_USER_MODEL = 'user.CustomUser'  # Point to your custom user model
+
+
+Q_CLUSTER = {
+    'name': 'DjangoORM',
+    'orm': 'default',  # Use Django's ORM to store results
+}

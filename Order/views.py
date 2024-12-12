@@ -69,58 +69,64 @@ class CheckOut(APIView,ResponseMixin):
         request_type=request.GET.get("request")
         if request_type=="create_checkout":
             return self.create_checkout(request)
-    def create_checkout(self,request):
+
+
+    def create_checkout(self, request):
         shipping_details_data = request.data.get("shippingDetails")
-        variant_product=request.GET.get("variant_product")
+        variant_product = request.GET.get("variant_product") == "1"  # Convert to boolean
         cart = request.data.get("cart")
         order_id = generate_order_id()
-        
-        # Initialize cart amount
+
+        # Initialize variables
         cart_amount = 0
         promotional_discount = 0
         price_after_discount = 0
         promocode = None
 
-        # Calculate the cart amount and determine promo code discount
+        # Fetch products and variants in bulk
         product_ids = {item.get("product_id") for item in cart}
-        variant_ids = {item.get("product_variant_id") for item in cart if item.get("product_variant_id")}
-
-        # Fetch all products and variants at once
         products = Product.objects.filter(id__in=product_ids)
-        variants = ProductVariant.objects.filter(id__in=variant_ids)
-        products = Product.objects.filter(id__in=product_ids)
+        product_price_map = {product.id: product.discount_price for product in products}
 
-        # Create dictionaries for quick lookup by ID
-        # product_price_map = {product.id: product.price for product in products}
-        variant_price_map = {variant.id: variant.discount_price for variant in variants}
-        product_price_map = {variant.id: variant.discount_price for variant in products}
-
+        variant_price_map = {}
+        if variant_product:
+            variant_ids = {item.get("product_variant_id") for item in cart if item.get("product_variant_id")}
+            variants = ProductVariant.objects.filter(id__in=variant_ids)
+            variant_price_map = {variant.id: variant.discount_price for variant in variants}
 
         # Calculate cart amount
-        cart_amount = 0
-        if variant_product:
-            for item in cart:
-                product_id = item.get("product_id")
-                variant_id = item.get("product_variant_id")
-                quantity = item.get("quantity", 1)
-                
-                # Use variant price if available; otherwise, fallback to product price
-                price = variant_price_map.get(variant_id)
-                cart_amount += price * quantity
-        else:
-            for item in cart:
-                product_id = item.get("product_id")
-                quantity = item.get("quantity", 1)
-                
-                # Use variant price if available; otherwise, fallback to product price
-                price = product_price_map.get(product_id)
-                cart_amount += price * quantity
-        # Apply promo code if provided
+        for item in cart:
+            product_id = item.get("product_id")
+            variant_id = item.get("product_variant_id")
+            quantity = item.get("quantity", 1)
 
-        # Create the Order object
-        tranx_id=self.generate_transaction_id(order_id)
-        payment_slipid=request.data.get("payment_slip_id")
-        payment_proof_instance=PaymentProof.objects.get(id=payment_slipid)
+            price = (
+                variant_price_map.get(variant_id)
+                if variant_product and variant_id
+                else product_price_map.get(product_id)
+            )
+            if price is None:
+                return self.handle_serializererror_response({"error": f"Invalid product or variant ID: {product_id} or {variant_id}"}, status_code=400)
+
+            cart_amount += price * quantity
+
+        # Handle promo code
+        promo_code_data = request.data.get("promo_code")
+        if promo_code_data:
+            promo_response = apply_promo_code_to_order(order_id, promo_code_data)
+            if promo_response.get("success"):
+                promotional_discount = Decimal(promo_response["discount_applicable"])
+                price_after_discount = cart_amount - promotional_discount
+            else:
+                return Response(promo_response, status=promo_response.get("status", 400))
+        else:
+            price_after_discount = cart_amount
+
+        # Create order
+        tranx_id = self.generate_transaction_id(order_id)
+        payment_slipid = request.data.get("payment_slip_id")
+        payment_proof_instance = PaymentProof.objects.get(id=payment_slipid)
+
         order = Order.objects.create(
             qr_payment_slip=payment_proof_instance,
             orderid=order_id,
@@ -128,73 +134,59 @@ class CheckOut(APIView,ResponseMixin):
             promotional_discount=promotional_discount,
             promocode_used=promocode,
             price_after_discount=price_after_discount,
-            transaction_uuid=tranx_id
+            transaction_uuid=tranx_id,
         )
-        promo_code_data = request.data.get("promo_code")
 
-        if promo_code_data:
-            # Call the apply_promo_code_to_order function
-            promo_response = apply_promo_code_to_order(order_id, promo_code_data)
-
-            # Check if there's an error in the response
-
-                
-
-            # If no error, get the promotional discount from the response
-            if promo_response["success"]==True:
-                promotional_discount = Decimal(promo_response["discount_applicable"])
-
-                # Calculate the price after applying the discount
-                price_after_discount = cart_amount - promotional_discount
-            else:
-                return Response(promo_response, status=promo_response["status"])
-
-        else:
-            # If no promo code is provided, the price is just the cart amount
-            price_after_discount = cart_amount
-        
-        
-        order.price_after_discount=price_after_discount
-        order.save()
-        print(price_after_discount)
-        # Attach the order object to the shipping details data
-        shipping_details_data["order"] = order.id
-
-        # Create OrderItem instances
+        # Create order items
         order_items = []
         with transaction.atomic():
             for item in cart:
                 product_id = item.get("product_id")
                 quantity = item.get("quantity", 1)
-                variant_id=item.get("product_variant_id")
-                product_color_id=item.get("product_color_id")
-                
+                variant_id = item.get("product_variant_id")
+                product_color_id = item.get("product_color_id")
+
                 product = get_object_or_404(Product, id=product_id)
-                product_variant = get_object_or_404(ProductVariant, id=variant_id)
-                product_color = get_object_or_404(VariantColors, id=product_color_id)
-                purchase_amount = variant_price_map.get(variant_id)
-
-                # Create an OrderItem instance and add it to the list
-                order_item = OrderItem(
-                    order=order,
-                    product=product,
-                    quantity=quantity,
-                    purchase_amount=purchase_amount,
-                    product_variant=product_variant,
-                    product_color=product_color.color
+                product_variant = (
+                    get_object_or_404(ProductVariant, id=variant_id) if variant_product and variant_id else None
                 )
-                order_items.append(order_item)
+                product_color = get_object_or_404(VariantColors, id=product_color_id)
+                purchase_amount = (
+                    variant_price_map.get(variant_id) if variant_product and variant_id else product_price_map.get(product_id)
+                )
 
-            # Bulk create the OrderItem objects for efficiency
+                order_items.append(
+                    OrderItem(
+                        order=order,
+                        product=product,
+                        quantity=quantity,
+                        purchase_amount=purchase_amount,
+                        product_variant=product_variant,
+                        product_color=product_color.color,
+                    )
+                )
+
             OrderItem.objects.bulk_create(order_items)
 
         # Save shipping details
+        shipping_details_data["order"] = order.id
         serializer = ShippingSerializer(data=shipping_details_data)
         if not serializer.is_valid():
             return self.handle_serializererror_response(serializer.errors, status_code=400)
         serializer.save()
 
-        return self.handle_success_response(status_code=200, message="Order created successfully",serialized_data={"id":order.id, "order_id":order_id,"order_amount":price_after_discount,"transaction_uuid":tranx_id})
+        # Return response
+        return self.handle_success_response(
+            status_code=200,
+            message="Order created successfully",
+            serialized_data={
+                "id": order.id,
+                "order_id": order_id,
+                "order_amount": price_after_discount,
+                "transaction_uuid": tranx_id,
+            },
+        )
+
 
 
 

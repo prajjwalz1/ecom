@@ -2,6 +2,28 @@ from rest_framework import serializers
 from .models import *
 from django.db import transaction
 
+
+class Base64ImageField(serializers.ImageField):
+    """
+    Custom serializer field to handle Base64-encoded images.
+    """
+    def to_internal_value(self, data):
+        if isinstance(data, str) and data.startswith('data:image'):
+            try:
+                # Separate the header from the base64 data
+                header, data = data.split('data:image/', 1)
+                format, data = data.split(';base64,', 1)
+                if format == "jpeg":
+                    format = "jpg"
+            except ValueError:
+                raise serializers.ValidationError("Invalid Base64 data")
+
+            decoded_file = base64.b64decode(data)
+            file_name = f"temp.{format}"
+            file = ContentFile(decoded_file, name=file_name)
+            return file
+        return super().to_internal_value(data)
+
 class TaggedProductSerializer(serializers.Serializer):
     tag = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all())
 
@@ -15,10 +37,19 @@ class BrandSerializer(serializers.ModelSerializer):
         model = Brand
         fields = ['id', 'name', 'description','image']  # Include fields you want to display
 
-class ProductImageSerializer(serializers.ModelSerializer):
+class ProductParentImageSerializer(serializers.ModelSerializer):
+    product_image = Base64ImageField()
+
     class Meta:
-        model = ProductImage
-        fields = ['id','image', 'alt_text']
+        model = ProductParentImage
+        fields = ['id', 'product_image', 'alt_text']
+
+class ProductParentImageGETSerializer(serializers.ModelSerializer):
+    image = Base64ImageField(source='product_image')
+
+    class Meta:
+        model = ProductParentImage
+        fields = ['id', 'image', 'alt_text']
 
 class GenericsTagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -90,15 +121,23 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def get_images(self, obj):
         # Collect parent images and all variant images
-        parent_images = ProductParentImageSerializer(
+        parent_images = ProductParentImageGETSerializer(
             obj.productparentimages.all(),  # Assuming the related name for parent images is `product_images`
             many=True,
             context=self.context
         ).data
         
-
+        variant_images = []
+        for variant in obj.variants.all():
+            variant_images.extend(
+                ProductImageSerializer(
+                    variant.productvariantsimages.all(),
+                    many=True,
+                    context=self.context
+                ).data
+            )
         
-        return parent_images
+        return parent_images + variant_images  # Combine parent and variant images
     
 class TagSerializer(serializers.ModelSerializer):
     products = serializers.SerializerMethodField()
@@ -163,7 +202,7 @@ class NavbarSerializer(serializers.ModelSerializer):
 class ProductDetailSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     brand = BrandSerializer(read_only=True)
-    images = ProductImageSerializer(many=True, read_only=True)
+    images = ProductParentImageSerializer(many=True, read_only=True)
     specifications = serializers.SerializerMethodField()
     variants = ProductVariantSerializer(read_only=True)  # Include variants for price access
 
@@ -273,26 +312,6 @@ from io import BytesIO
 
 
 
-class Base64ImageField(serializers.ImageField):
-    """
-    Custom serializer field to handle Base64-encoded images.
-    """
-    def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith('data:image'):
-            try:
-                # Separate the header from the base64 data
-                header, data = data.split('data:image/', 1)
-                format, data = data.split(';base64,', 1)
-                if format == "jpeg":
-                    format = "jpg"
-            except ValueError:
-                raise serializers.ValidationError("Invalid Base64 data")
-
-            decoded_file = base64.b64decode(data)
-            file_name = f"temp.{format}"
-            file = ContentFile(decoded_file, name=file_name)
-            return file
-        return super().to_internal_value(data)
 
 class ProductImageAddSerializer(serializers.ModelSerializer):
     image = Base64ImageField()

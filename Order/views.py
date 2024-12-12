@@ -71,6 +71,7 @@ class CheckOut(APIView,ResponseMixin):
             return self.create_checkout(request)
     def create_checkout(self,request):
         shipping_details_data = request.data.get("shippingDetails")
+        variant_product=request.GET.get("variant_product")
         cart = request.data.get("cart")
         order_id = generate_order_id()
         
@@ -87,22 +88,33 @@ class CheckOut(APIView,ResponseMixin):
         # Fetch all products and variants at once
         products = Product.objects.filter(id__in=product_ids)
         variants = ProductVariant.objects.filter(id__in=variant_ids)
+        products = Product.objects.filter(id__in=product_ids)
 
         # Create dictionaries for quick lookup by ID
         # product_price_map = {product.id: product.price for product in products}
         variant_price_map = {variant.id: variant.discount_price for variant in variants}
+        product_price_map = {variant.id: variant.discount_price for variant in products}
+
 
         # Calculate cart amount
         cart_amount = 0
-        for item in cart:
-            product_id = item.get("product_id")
-            variant_id = item.get("product_variant_id")
-            quantity = item.get("quantity", 1)
-            
-            # Use variant price if available; otherwise, fallback to product price
-            price = variant_price_map.get(variant_id)
-            cart_amount += price * quantity
-
+        if variant_product:
+            for item in cart:
+                product_id = item.get("product_id")
+                variant_id = item.get("product_variant_id")
+                quantity = item.get("quantity", 1)
+                
+                # Use variant price if available; otherwise, fallback to product price
+                price = variant_price_map.get(variant_id)
+                cart_amount += price * quantity
+        else:
+            for item in cart:
+                product_id = item.get("product_id")
+                quantity = item.get("quantity", 1)
+                
+                # Use variant price if available; otherwise, fallback to product price
+                price = product_price_map.get(product_id)
+                cart_amount += price * quantity
         # Apply promo code if provided
 
         # Create the Order object

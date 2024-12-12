@@ -53,6 +53,11 @@ class Specification(CustomizedModel):
 
     def __str__(self):
         return f"{self.spec_name} "
+class ProductImages(CustomizedModel):
+    product=models.ForeignKey('Product',on_delete=models.SET_NULL,null=True,blank=True)
+    image_alt=models.CharField(max_length=255,null=True,blank=True)
+    product_image=models.ImageField(upload_to="products/images/",null=False,blank=True)
+    
 
 class Product(CustomizedModel):
     product_name=models.CharField(max_length=255,null=False,blank=True)
@@ -62,6 +67,8 @@ class Product(CustomizedModel):
     stock = models.IntegerField()
     tags = models.ManyToManyField(Tag, blank=True, related_name='products')
     details= RichTextField(null=True,blank=True) 
+    product_price=models.DecimalField(max_digits=10, decimal_places=2)
+    discount_price=models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self) -> str:
         return self.product_name

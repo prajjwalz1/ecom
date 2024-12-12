@@ -73,8 +73,8 @@ class Product(CustomizedModel):
     stock = models.IntegerField()
     tags = models.ManyToManyField(Tag, blank=True, related_name='products')
     details= RichTextField(null=True,blank=True) 
-    product_price=models.DecimalField(max_digits=10, decimal_places=2)
-    discount_price=models.DecimalField(max_digits=10, decimal_places=2)
+    product_price=models.DecimalField(max_digits=10, decimal_places=2,null=True,blank=True)
+    discount_price=models.DecimalField(max_digits=10, decimal_places=2,null=True,blank=True)
 
     def __str__(self) -> str:
         return self.product_name

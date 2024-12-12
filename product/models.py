@@ -53,6 +53,12 @@ class Specification(CustomizedModel):
 
     def __str__(self):
         return f"{self.spec_name} "
+    
+from rest_framework import serializers
+from django.db import transaction
+
+
+
 class ProductImages(CustomizedModel):
     product=models.ForeignKey('Product',on_delete=models.SET_NULL,null=True,blank=True)
     image_alt=models.CharField(max_length=255,null=True,blank=True)
@@ -130,7 +136,14 @@ class ProductImage(CustomizedModel):
 
     def __str__(self):
         return f'Image for {self.alt_text}'
-    
+
+class ProductParentImage(CustomizedModel):
+    product = models.ForeignKey(Product,null=True,blank=True, on_delete=models.CASCADE, related_name='productparentimages')
+    product_image = models.ImageField(upload_to='products/images/')
+    alt_text = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return f'Image for {self.alt_text}'
 
 class ProductSpecification(CustomizedModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='specifications')

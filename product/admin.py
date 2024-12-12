@@ -120,3 +120,4 @@ class NavbarAdmin(admin.ModelAdmin):
 
 
 admin.site.register(VariantColors)
+admin.site.register(ProductParentImage)

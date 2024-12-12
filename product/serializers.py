@@ -62,18 +62,18 @@ class ProductVariantSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     brand = BrandSerializer(read_only=True)
-    tags = GenericsTagSerializer(read_only=True,many=True)
-    images = serializers.SerializerMethodField()  # Collect images across all variants
+    tags = GenericsTagSerializer(read_only=True, many=True)
+    images = serializers.SerializerMethodField()  # Collect images across all variants and parent images
     variants = ProductVariantSerializer(many=True, read_only=True)  # Fetch variants, including specifications
     brand_id = serializers.CharField(source='brand.id', allow_null=True)
     specifications = ProductdetailsSpecificationSerializer(many=True, read_only=True)
-
 
     class Meta:
         model = Product
         fields = [
             'id', 'product_name', 'brand_id', 'stock', 'details',
-            'product_description', 'images', 'category', 'brand', 'variants','specifications','tags'
+            'product_description', 'images', 'category', 'brand', 
+            'variants', 'specifications', 'tags'
         ]
 
     def get_price(self, obj):
@@ -89,18 +89,16 @@ class ProductSerializer(serializers.ModelSerializer):
         return None
 
     def get_images(self, obj):
-        # Collect all images from all variants and return as a list
-        images = []
-        for variant in obj.variants.all():
-            images.extend(
-                ProductImageSerializer(
-                    variant.productvariantsimages.all(),
-                    many=True,
-                    context=self.context
-                ).data
-            )
-        return images
+        # Collect parent images and all variant images
+        parent_images = ProductParentImageSerializer(
+            obj.productparentimages.all(),  # Assuming the related name for parent images is `product_images`
+            many=True,
+            context=self.context
+        ).data
+        
 
+        
+        return parent_images
     
 class TagSerializer(serializers.ModelSerializer):
     products = serializers.SerializerMethodField()
@@ -334,7 +332,31 @@ class ProductVariantSerializerForAdd(serializers.ModelSerializer):
         self.fields['productvariantsimages'].context.update(self.context)
 
 
+# class Base64ImageField(serializers.ImageField):
+#     """
+#     Custom serializer field to handle Base64-encoded images.
+#     """
+#     def to_internal_value(self, data):
+#         if isinstance(data, str) and data.startswith('data:image'):
+#             try:
+#                 # Separate the header from the base64 data
+#                 format, imgstr = data.split(';base64,')  # Format -> data:image/format
+#                 ext = format.split('/')[-1]  # Extract image format
+#                 if ext == "jpeg":
+#                     ext = "jpg"
+#                 decoded_file = base64.b64decode(imgstr)
+#                 file_name = f"temp.{ext}"
+#                 data = ContentFile(decoded_file, name=file_name)
+#             except (ValueError, TypeError):
+#                 raise serializers.ValidationError("Invalid Base64 image data.")
+#         return super().to_internal_value(data)
 
+class ProductParentImageSerializer(serializers.ModelSerializer):
+    product_image = Base64ImageField()
+
+    class Meta:
+        model = ProductParentImage
+        fields = ['id', 'product_image', 'alt_text']
 
 class ProductAddSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
@@ -342,6 +364,7 @@ class ProductAddSerializer(serializers.ModelSerializer):
     tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
     specifications = ProductSpecificationSerializer(many=True, required=True)
     variants = ProductVariantSerializerForAdd(many=True)
+    product_images = ProductParentImageSerializer(many=True, required=False)
 
     class Meta:
         model = Product
@@ -354,20 +377,23 @@ class ProductAddSerializer(serializers.ModelSerializer):
             'stock',
             'tags',
             'details',
+            'product_price',
+            'discount_price',
             'specifications',
             'variants',
+            'product_images',
         ]
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if 'variants' in self.fields:
-            self.fields['variants'].context.update(self.context)
+    def validate(self, attrs):
+        if attrs.get('discount_price') and attrs['discount_price'] > attrs['product_price']:
+            raise serializers.ValidationError("Discount price cannot be greater than the product price.")
+        return attrs
 
     def create(self, validated_data):
         specifications_data = validated_data.pop('specifications', [])
         variants_data = validated_data.pop('variants', [])
+        product_images_data = validated_data.pop('product_images', [])
         tags_data = validated_data.pop('tags', [])
-        
 
         with transaction.atomic():
             # Create the product
@@ -383,16 +409,23 @@ class ProductAddSerializer(serializers.ModelSerializer):
 
             # Create product variants
             for variant_data in variants_data:
-                colors=variant_data.pop('color_available',[])
+                colors = variant_data.pop('color_available', [])
                 images_data = variant_data.pop('productvariantsimages', [])
                 product_variant = ProductVariant.objects.create(product=product, **variant_data)
                 product_variant.color_available.set(colors)
                 product_variant.save()
+
                 # Create product images for the variant
                 ProductImage.objects.bulk_create([
                     ProductImage(productvariant=product_variant, **image_data)
                     for image_data in images_data
                 ])
+
+            # Create product images
+            ProductParentImage.objects.bulk_create([
+                ProductParentImage(product=product, **image_data)
+                for image_data in product_images_data
+            ])
 
         return product
     

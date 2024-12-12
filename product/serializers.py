@@ -382,7 +382,7 @@ class ProductAddSerializer(serializers.ModelSerializer):
     brand = serializers.PrimaryKeyRelatedField(queryset=Brand.objects.all(), allow_null=True)
     tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
     specifications = ProductSpecificationSerializer(many=True, required=True)
-    variants = ProductVariantSerializerForAdd(many=True)
+    variants = ProductVariantSerializerForAdd(many=True,required=False)
     product_images = ProductParentImageSerializer(many=True, required=False)
 
     class Meta:

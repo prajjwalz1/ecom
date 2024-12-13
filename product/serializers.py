@@ -74,7 +74,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductVariant
-        fields = ['id', 'price','variant_name', 'color_available', 'ram', 'rom', 'discount_price', 'images']
+        fields = ['id', 'price','discount_price','variant_name', 'color_available', 'ram', 'rom', 'images']
 
     def get_images(self, obj):
         # Use the ProductImageSerializer to serialize related images
@@ -102,22 +102,22 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'id', 'product_name', 'brand_id', 'stock', 'details',
+            'id', 'product_name', 'brand_id', 'stock','product_price','discount_price', 'details',
             'product_description', 'images', 'category', 'brand', 
             'variants', 'specifications', 'tags'
         ]
 
-    def get_price(self, obj):
-        # Optionally return the price of the first variant, adjust as necessary
-        if obj.variants.exists():
-            return obj.variants.first().price
-        return None
+    # def get_price(self, obj):
+    #     # Optionally return the price of the first variant, adjust as necessary
+    #     if obj.variants.exists():
+    #         return obj.variants.first().price
+    #     return None
 
-    def get_discount_price(self, obj):
-        # Optionally return the discount price of the first variant, adjust as necessary
-        if obj.variants.exists():
-            return obj.variants.first().discount_price
-        return None
+    # def get_discount_price(self, obj):
+    #     # Optionally return the discount price of the first variant, adjust as necessary
+    #     if obj.variants.exists():
+    #         return obj.variants.first().discount_price
+    #     return None
 
     def get_images(self, obj):
         # Collect parent images and all variant images

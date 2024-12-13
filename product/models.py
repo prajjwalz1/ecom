@@ -93,7 +93,7 @@ class VariantColors(CustomizedModel):
 class ProductVariant(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
     variant_name = models.CharField(max_length=255, null=True, blank=True)
-    color_available = models.ManyToManyField(VariantColors, blank=True)  # Link to dynamic colors
+    color_available = models.ManyToManyField(VariantColors, blank=True) 
     rom = models.CharField(max_length=255, null=True, blank=True)
     ram = models.CharField(max_length=255, null=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)

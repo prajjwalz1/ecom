@@ -75,6 +75,7 @@ class Product(CustomizedModel):
     details= RichTextField(null=True,blank=True) 
     product_price=models.DecimalField(max_digits=10, decimal_places=2,null=True,blank=True)
     discount_price=models.DecimalField(max_digits=10, decimal_places=2,null=True,blank=True)
+    has_variant = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return self.product_name

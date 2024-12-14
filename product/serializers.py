@@ -102,7 +102,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'id', 'product_name', 'brand_id', 'stock','product_price','discount_price', 'details',
+            'id', 'product_name','has_variant', 'brand_id', 'stock','product_price','discount_price', 'details',
             'product_description', 'images', 'category', 'brand', 
             'variants', 'specifications', 'tags'
         ]
@@ -401,6 +401,7 @@ class ProductAddSerializer(serializers.ModelSerializer):
             'specifications',
             'variants',
             'product_images',
+            'has_variant'
         ]
 
     def validate(self, attrs):
@@ -485,6 +486,9 @@ class GenericsProductAddSerializer(serializers.ModelSerializer):
             'details',
             'specifications',
             'variants',
+            'product_price',
+            'discount_price',
+            'has_variant'
         ]
 
     def create(self, validated_data):
@@ -526,6 +530,9 @@ class GenericsProductAddSerializer(serializers.ModelSerializer):
         instance.brand = validated_data.get('brand', instance.brand)
         instance.stock = validated_data.get('stock', instance.stock)
         instance.details = validated_data.get('details', instance.details)
+        instance.discount_price = validated_data.get('discount_price', instance.discount_price)
+        instance.product_price = validated_data.get('product_price', instance.product_price)
+        instance.has_variant = validated_data.get('has_variant', instance.has_variant)
         instance.save()
 
         # Handle tags: If tags are provided, update them

@@ -421,6 +421,19 @@ class ProductListCreateView(generics.ListCreateAPIView):
     pagination_class = PageNumberPagination
 
 
+class ColorsListCreateView(generics.ListCreateAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = VariantColors.objects.all()
+    serializer_class = ProductVaraintColorSerializer
+    pagination_class = PageNumberPagination
+
+class ColorsUpdateDistroyView(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = VariantColors.objects.all()
+    serializer_class = ProductVaraintColorSerializer
+    pagination_class = PageNumberPagination
 
 class ProductRetrieveUpdateDestroyView(ResponseMixin, generics.RetrieveUpdateDestroyAPIView):
     authentication_classes=[JWTAuthentication]

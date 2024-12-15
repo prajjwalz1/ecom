@@ -49,6 +49,8 @@ INSTALLED_APPS = [
     'Order',
     'user',
     'authentication',
+    'EmiService',
+    'DynamicPages'
 
 
 ]

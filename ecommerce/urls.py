@@ -27,6 +27,8 @@ urlpatterns = [
     path('ckeditor/', include('ckeditor_uploader.urls')),  # If you plan to use file uploads
     path('order/',include('Order.urls')),
     path('auth/',include('authentication.urls')),
+    path('api/emi/', include('EmiService.urls')),
+    path('api/pages/', include('DynamicPages.urls')),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

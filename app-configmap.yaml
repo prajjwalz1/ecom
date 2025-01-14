@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-configmap
+data:
+  DB_NAME: "ecommerce"
+  DB_USER: "postgres"
+  DB_PASS: "1234"
+  DB_HOST: "127.0.0.1"
+
+  NEXT_BASE_URL: "https://infotech-frontend.pages.dev"
+
+  EMAIL_HOST_USER: "consignsolution@gmail.com"
+  EMAIL_HOST_PASSWORD: "znpprxzytivwwhkb"
+  DEFAULT_FROM_EMAIL: "consignsolution@gmail.com"
+
+  ADMIN_EMAIL: "prabinsubedi2016@gmail.com"

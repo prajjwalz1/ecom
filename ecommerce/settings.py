@@ -232,3 +232,8 @@ Q_CLUSTER = {
     'name': 'DjangoORM',
     'orm': 'default',  # Use Django's ORM to store results
 }
+
+
+CELERY_BROKER_URL = "redis://redis:6379/0"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"

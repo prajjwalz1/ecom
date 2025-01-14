@@ -97,8 +97,8 @@ class LoanTypeListCreateView(ListCreateAPIView):
     """
     API for listing and creating loan types.
     """
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    authentication_classes = []
+    permission_classes = []
     queryset = LoanType.objects.all()
     serializer_class = LoanTypeSerializer
     pagination_class = PageNumberPagination

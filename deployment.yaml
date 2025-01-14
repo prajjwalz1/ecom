@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:latest
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: app-configmap
+                  key: DB_NAME
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: app-configmap
+                  key: DB_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: app-configmap
+                  key: DB_PASS
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: django
+          image: prajjwalacharya/infotech_nepal-web:latest # Replace with your actual Django image
+          command: ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: app-configmap
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: app-configmap
+                  key: DB_USER
+            - name: DB_PASS
+              valueFrom:
+                configMapKeyRef:
+                  name: app-configmap
+                  key: DB_PASS
+            - name: DB_HOST
+              value: db-service  # The name of the DB service
+            - name: DB_PORT
+              value: "5432"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-service
+spec:
+  selector:
+    app: db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  clusterIP: None  # This is used for StatefulSets, but ensures DNS resolution in this case
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+spec:
+  selector:
+    app: web
+  ports:
+    - protocol: TCP
+      port: 8000        # The port your application listens on
+      targetPort: 8000  # The container port
+      nodePort: 31000   # The specific NodePort to expose the service
+  type: NodePort        # Exposes the service to external access

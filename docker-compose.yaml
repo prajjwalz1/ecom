@@ -1,0 +1,48 @@
+version: '3'
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    ports:
+      - "5433:5432"  # Exposes port 5432 inside the container to 5433 on the host machine
+
+  web:
+    build: .
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    depends_on:
+      - db  # Ensures db is up before web starts
+    environment:
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_HOST: db        # This is the service name for PostgreSQL inside Docker
+      DB_PORT: 5432      # Internal port, PostgreSQL is listening on 5432 inside the container
+    ports:
+      - "8000:8000"  # Exposes port 8000 for the Django app
+
+
+  redis:
+    image: redis:latest
+    container_name: redis_container
+    ports:
+      - "6379:6379" # Maps Redis port to your host
+    volumes:
+      - redis_data:/data # Persistent storage
+    command: ["redis-server", "--appendonly", "yes"] # Enable AOF for data durability
+  
+  celery:
+    container_name: celery_worker
+    build:
+      context: .
+    command: celery -A ecommerce worker --loglevel=info
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+volumes:
+    redis_data:

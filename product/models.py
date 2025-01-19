@@ -175,12 +175,15 @@ class CarouselImage(CustomizedModel):
         return self.title or f"Carousel Image {self.id}"
     
 
-class Navbar(CustomizedModel):
-    name=models.CharField(max_length=255,null=False,blank=False)
-    category=models.ManyToManyField(Category,blank=True)
+class Navbar(models.Model):
+    INTEGER_CHOICES = [(i, i) for i in range(1, 12)]  # Generates choices dynamically
 
-    def __str__(Self):
-        return Self.name
+    name = models.CharField(max_length=255, null=False, blank=False)
+    category = models.ManyToManyField('Category', blank=True)
+    priority = models.IntegerField(choices=INTEGER_CHOICES,default=11)  # IntegerChoices replaced with IntegerField for choices
+
+    def __str__(self):
+        return self.name
     
 
 class ProductReview(CustomizedModel):

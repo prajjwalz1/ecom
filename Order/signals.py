@@ -9,21 +9,13 @@ from .models import Order
 from django.core.mail import send_mail
 
 
-import threading
+from .task import send_email_task
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.core.mail import send_mail
 from django.conf import settings
 
-def send_email_in_thread(subject, message, to_email):
-    """
-    Function to send email in a separate thread to avoid blocking the main thread.
-    """
-    try:
-        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [to_email], fail_silently=False)
-    except Exception as e:
-        # Log the error or handle it as needed
-        print(f"Error sending email: {e}")
+
 
 @receiver(post_save, sender=ShippingDetails)
 def send_admin_notification_on_order(sender, instance, created, **kwargs):
@@ -34,6 +26,11 @@ def send_admin_notification_on_order(sender, instance, created, **kwargs):
         print(shipping_details)
 
         # Prepare email content
+
+# from your_app_name.tasks import send_email_task
+# from django.conf import settings
+
+# def send_order_email(instance, order):
         subject = 'New Order and Payment Received'
         admin_message = (
             f"A new order has been received!\n\n"
@@ -53,9 +50,8 @@ def send_admin_notification_on_order(sender, instance, created, **kwargs):
             "Thank you for shopping with us!"
         )
 
-        # Create and start the thread to send email to admin
-        threading.Thread(target=send_email_in_thread, args=(subject, admin_message, settings.ADMIN_EMAIL)).start()
+        # Send emails using Celery tasks
+        send_email_task.delay(subject, admin_message, settings.ADMIN_EMAIL)
 
-        # Create and start the thread to send email to the shipping details email
         if shipping_details and shipping_details.email:  # Check if shipping details exist
-            threading.Thread(target=send_email_in_thread, args=(subject, client_message, shipping_details.email)).start()
+            send_email_task.delay(subject, client_message, shipping_details.email)

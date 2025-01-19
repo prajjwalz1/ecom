@@ -27,16 +27,16 @@ class OrderItem(CustomizedModel):
 
 class ShippingDetails(CustomizedModel):
     order=models.OneToOneField('Order',on_delete=models.DO_NOTHING,related_name='shippingdetails')
-    country=models.CharField(max_length=255,null=False,blank=False)
+    country=models.CharField(max_length=255,null=True,blank=True)
     fullname=models.CharField(max_length=255,null=False,blank=False)
     district=models.CharField(max_length=255,null=False,blank=False)
-    city=models.CharField(max_length=255,null=False,blank=False)
+    city=models.CharField(max_length=255,null=True,blank=True)
     phonenumber=models.CharField(max_length=255,null=False,blank=False)
-    alternate_phone_numbers=models.CharField(max_length=255,null=False,blank=True)
-    land_mark=models.CharField(max_length=255,null=False,blank=False)
+    alternate_phone_numbers=models.CharField(max_length=255,null=True,blank=True)
+    land_mark=models.CharField(max_length=255,null=True,blank=True)
     postal_code=models.CharField(max_length=255,null=False,blank=False)
     additional_information=models.CharField(max_length=255,null=True,blank=True)
-    email=models.EmailField(null=False,blank=False)
+    email=models.EmailField(null=True,blank=True)
     request_delivery_date=models.DateField(null=True,blank=True)
 
 

@@ -11,7 +11,7 @@ services:
     ports:
       - "5433:5432"  # Expose port 5432 inside the container to 5433 on the host
     volumes:
-      - postgres_data:/var/lib/postgresql/data  # Persistent storage for database data
+      - /root/infotech/database:/var/lib/postgresql/data
 
   web:
     build: .

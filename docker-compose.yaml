@@ -1,48 +1,57 @@
-version: '3'
+version: '3.8'  # Use a more specific version if needed
+
 services:
   db:
-    image: postgres:latest
+    image: postgres:15
+    container_name: postgres_container
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASS}
     ports:
-      - "5433:5432"  # Exposes port 5432 inside the container to 5433 on the host machine
+      - "5433:5432"  # Expose port 5432 inside the container to 5433 on the host
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Persistent storage for database data
 
   web:
     build: .
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    container_name: django_web
+    command: gunicorn ecommerce.wsgi:application --bind 0.0.0.0:8000 --workers 3
     depends_on:
-      - db  # Ensures db is up before web starts
+      - db
     environment:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
-      DB_HOST: db        # This is the service name for PostgreSQL inside Docker
-      DB_PORT: 5432      # Internal port, PostgreSQL is listening on 5432 inside the container
+      DB_HOST: db        # Service name for PostgreSQL inside Docker
+      DB_PORT: 5432      # Internal port for PostgreSQL
     ports:
-      - "8000:8000"  # Exposes port 8000 for the Django app
+      - "8000:8000"  # Expose port 8000 for Gunicorn
+    volumes:
+      - .:/app
 
 
   redis:
     image: redis:latest
     container_name: redis_container
     ports:
-      - "6379:6379" # Maps Redis port to your host
+      - "6379:6379"  # Map Redis port to your host
     volumes:
-      - redis_data:/data # Persistent storage
-    command: ["redis-server", "--appendonly", "yes"] # Enable AOF for data durability
-  
+      - redis_data:/data  # Persistent storage for Redis
+    command: ["redis-server", "--appendonly", "yes"]  # Enable AOF for data durability
+
   celery:
     container_name: celery_worker
     build:
       context: .
     command: celery -A ecommerce worker --loglevel=info
     environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
     depends_on:
       - redis
     volumes:
       - .:/app
+
 volumes:
-    redis_data:
+  postgres_data:  # Persistent storage for PostgreSQL
+  redis_data:     # Persistent storage for Redis

@@ -26,7 +26,7 @@ services:
       DB_HOST: db        # Service name for PostgreSQL inside Docker
       DB_PORT: 5432      # Internal port for PostgreSQL
     ports:
-      - "8001:8000"  # Expose port 8000 for Gunicorn
+      - "8000:8000"  # Expose port 8000 for Gunicorn
     volumes:
       - .:/app
 

@@ -30,7 +30,7 @@ class HomeView(ResponseMixin,APIView):
             return ResponseMixin.handle_error_response(error_message="bad request",status_code=400)
 
     def getnavbar(self,request):
-        obj=Navbar.objects.prefetch_related('category').all()
+        obj = Navbar.objects.prefetch_related('category').all()
         serializer=NavbarSerializer(obj,many=True,context={"request":request})
         return serializer.data
     def get_carousel_images(self,request):

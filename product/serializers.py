@@ -185,7 +185,6 @@ class ParentCategorySerializer(serializers.ModelSerializer):
         if instance.parent_category is None:
             return super().to_representation(instance)
         return None
-
 class NavbarSerializer(serializers.ModelSerializer):
     categories = serializers.SerializerMethodField()
 
@@ -194,10 +193,24 @@ class NavbarSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'categories']
 
     def get_categories(self, obj):
-        # Get only the parent categories (where parent_category is None)
-        parent_categories = obj.category.filter(parent_category__isnull=True)
-        return ParentCategorySerializer(parent_categories, many=True).data
-    
+        # Fetch parent categories linked through the many-to-many field
+        parent_categories = obj.category.filter(id__isnull=False)
+
+        # Create a set to avoid duplicates
+        all_categories = set(parent_categories)
+
+        # Add all child categories of the parent categories
+        for parent in parent_categories:
+            child_categories = parent.subcategories.all()  # Assuming `subcategories` is the related_name for the FK
+            all_categories.update(child_categories)
+
+        # Serialize the unique categories
+        serialized_categories = CategorySerializer(list(all_categories), many=True).data
+
+        return serialized_categories
+        # Serialize all categories into a flat list
+        return ParentCategorySerializer(all_categories, many=True).data
+
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)

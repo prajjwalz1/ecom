@@ -484,14 +484,14 @@ class ProductImageCreateView(generics.ListCreateAPIView):
 class ProductImageWithoutVariantCreateView(generics.ListCreateAPIView):
     authentication_classes=[JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    queryset = ProductImage.objects.all()
+    queryset = ProductParentImage.objects.all()
     serializer_class = ProductImageWithoutVariantSerializer
     pagination_class = PageNumberPagination
    
 class ProductImageWithoutVariantUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     authentication_classes=[JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    queryset = ProductImage.objects.all()
+    queryset = ProductParentImage.objects.all()
     serializer_class = ProductImageWithoutVariantSerializer
 
 

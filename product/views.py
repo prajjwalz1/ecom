@@ -480,7 +480,21 @@ class ProductImageCreateView(generics.ListCreateAPIView):
     queryset = ProductImage.objects.all()
     serializer_class = ProductImageSerializer
     pagination_class = PageNumberPagination
+
+class ProductImageWithoutVariantCreateView(generics.ListCreateAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = ProductImage.objects.all()
+    serializer_class = ProductImageWithoutVariantSerializer
+    pagination_class = PageNumberPagination
    
+class ProductImageWithoutVariantUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = ProductImage.objects.all()
+    serializer_class = ProductImageWithoutVariantSerializer
+
+
 class ProductImageUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     authentication_classes=[JWTAuthentication]
     permission_classes = [IsAuthenticated]

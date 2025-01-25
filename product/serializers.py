@@ -205,7 +205,7 @@ class NavbarSerializer(serializers.ModelSerializer):
             all_categories.update(child_categories)
 
         # Serialize the unique categories
-        serialized_categories = CategorySerializer(list(all_categories), many=True).data
+        serialized_categories = CategorySerializer((all_categories), many=True).data
 
         return serialized_categories
         # Serialize all categories into a flat list
@@ -305,6 +305,11 @@ class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
         fields = ['id', 'productvariant', 'image', 'alt_text']
+
+class ProductImageWithoutVariantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductParentImage
+        fields = ['product', 'product_image', 'alt_text']
 
 class ProductVariantPriceHistorySerializer(serializers.ModelSerializer):
     class Meta:

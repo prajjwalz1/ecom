@@ -280,6 +280,7 @@ def order_slip_view(request):
     
     context = {
         'order_date': order_obj.created_at,  
+        'order_status':order_obj.order_status,
         'ordered_by': {
             'name': shipping_details.fullname if shipping_details else '',
             'phone': shipping_details.phonenumber if shipping_details else '',

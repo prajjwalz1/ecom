@@ -169,7 +169,7 @@ class CheckOut(APIView,ResponseMixin):
                         quantity=quantity,
                         purchase_amount=purchase_amount,
                         product_variant=product_variant,
-                        product_color=pr_color if pr_color else product_color
+                        product_color=pr_color if product_color_id else product_color
                     )
                 )
 

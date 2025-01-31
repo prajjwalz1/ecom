@@ -150,7 +150,14 @@ class CheckOut(APIView,ResponseMixin):
                 product_variant = (
                     get_object_or_404(ProductVariant, id=variant_id) if variant_product and variant_id else None
                 )
-                product_color = get_object_or_404(VariantColors, id=product_color_id)
+                
+                if product_color_id:
+                    product_color = get_object_or_404(VariantColors, id=product_color_id)
+                    pr_color=product_color.color
+                else:
+                    # If product_color_id is not provided, set product_color to None
+                    product_color = None
+
                 purchase_amount = (
                     variant_price_map.get(variant_id) if variant_product and variant_id else product_price_map.get(product_id)
                 )
@@ -162,7 +169,7 @@ class CheckOut(APIView,ResponseMixin):
                         quantity=quantity,
                         purchase_amount=purchase_amount,
                         product_variant=product_variant,
-                        product_color=product_color.color,
+                        product_color=pr_color if pr_color else product_color
                     )
                 )
 

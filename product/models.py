@@ -12,6 +12,7 @@ class Category(CustomizedModel):
     parent_category = models.ForeignKey(
         'self', on_delete=models.SET_NULL, null=True, blank=True, related_name='subcategories'
     )
+    priority=models.IntegerField(default=1)
 
     def __str__(self):
         return self.name

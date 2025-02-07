@@ -194,18 +194,18 @@ class NavbarSerializer(serializers.ModelSerializer):
 
     def get_categories(self, obj):
         # Fetch parent categories linked through the many-to-many field
-        parent_categories = obj.category.filter(id__isnull=False)
+        parent_categories = obj.category.filter(id__isnull=False).order_by('priority')
 
-        # Create a set to avoid duplicates
-        all_categories = set(parent_categories)
+        # Create a set to avoid duplicates while maintaining order
+        all_categories = list(parent_categories)
 
-        # Add all child categories of the parent categories
+        # Add all child categories of the parent categories and sort by priority
         for parent in parent_categories:
-            child_categories = parent.subcategories.all()  # Assuming `subcategories` is the related_name for the FK
-            all_categories.update(child_categories)
+            child_categories = parent.subcategories.all().order_by('priority')  # Assuming `subcategories` is the related_name
+            all_categories.extend(child for child in child_categories if child not in all_categories)
 
         # Serialize the unique categories
-        serialized_categories = CategorySerializer((all_categories), many=True).data
+        serialized_categories = CategorySerializer(all_categories, many=True).data
 
         return serialized_categories
         # Serialize all categories into a flat list

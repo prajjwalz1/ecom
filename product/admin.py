@@ -8,7 +8,7 @@ from .models import *
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('id','name', 'description', 'parent_category')
+    list_display = ('id','name', 'description', 'parent_category','priority')
     search_fields = ('name',)
     list_filter = ('parent_category',)
 
@@ -39,6 +39,7 @@ class SpecificationAdmin(admin.ModelAdmin):
 class ProductSpecificationInline(admin.TabularInline):
     model = ProductSpecification
     extra = 1  # Allows adding multiple specifications in the same form
+
 
 
 class ProductVariantPriceHistoryInline(admin.TabularInline):

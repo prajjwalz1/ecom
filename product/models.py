@@ -85,7 +85,7 @@ class Product(CustomizedModel):
     product_name = models.CharField(max_length=255, null=False, blank=True)
     product_description = models.TextField(null=False, blank=False)
     category = models.ForeignKey(
-        Category, on_delete=models.SET_NULL, related_name="products"
+        Category, on_delete=models.SET_NULL, null=True, related_name="products"
     )
     brand = models.ForeignKey(
         Brand, on_delete=models.SET_NULL, null=True, blank=True, related_name="products"

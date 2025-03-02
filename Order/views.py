@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from product.mixins import *
 from .serializers import *
 from .models import *
+
 # Create your views here.
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -14,7 +15,7 @@ from django.views import View
 import base64
 import json
 from decimal import Decimal
-from rest_framework.views import APIView 
+from rest_framework.views import APIView
 from django.http import JsonResponse
 from product.mixins import ResponseMixin
 from rest_framework.decorators import api_view
@@ -35,6 +36,7 @@ from django.db.models import Sum, Avg, Count, Q
 from django.db.models.functions import TruncMonth
 from .models import Order
 
+
 def generate_order_id():
     # Get the current date and time
     now = datetime.datetime.now()
@@ -46,8 +48,9 @@ def generate_order_id():
     order_id = f"{timestamp}{random_num}"
     return order_id
 
-class CheckOut(APIView,ResponseMixin):
-    def generate_transaction_id(self,order_id):
+
+class CheckOut(APIView, ResponseMixin):
+    def generate_transaction_id(self, order_id):
         """
         Generates a transaction ID in the format "infotech-order-<order_id>".
 
@@ -62,20 +65,22 @@ class CheckOut(APIView,ResponseMixin):
 
         # Construct the transaction ID
         transaction_id = f"infotech-order-{order_id_str}"
-        
+
         return transaction_id
 
-    def post(self,request):
-        request_type=request.GET.get("request")
-        if request_type=="create_checkout":
+    def post(self, request):
+        request_type = request.GET.get("request")
+        if request_type == "create_checkout":
             return self.create_checkout(request)
-
 
     def create_checkout(self, request):
         shipping_details_data = request.data.get("shippingDetails")
-        variant_product = request.GET.get("variant_product") == "1"  # Convert to boolean
+        variant_product = (
+            request.GET.get("variant_product") == "1"
+        )  # Convert to boolean
         cart = request.data.get("cart")
         order_id = generate_order_id()
+        payment_mode = request.data.get("payment_mode")
 
         # Initialize variables
         cart_amount = 0
@@ -90,9 +95,15 @@ class CheckOut(APIView,ResponseMixin):
 
         variant_price_map = {}
         if variant_product:
-            variant_ids = {item.get("product_variant_id") for item in cart if item.get("product_variant_id")}
+            variant_ids = {
+                item.get("product_variant_id")
+                for item in cart
+                if item.get("product_variant_id")
+            }
             variants = ProductVariant.objects.filter(id__in=variant_ids)
-            variant_price_map = {variant.id: variant.discount_price for variant in variants}
+            variant_price_map = {
+                variant.id: variant.discount_price for variant in variants
+            }
 
         # Calculate cart amount
         for item in cart:
@@ -106,7 +117,12 @@ class CheckOut(APIView,ResponseMixin):
                 else product_price_map.get(product_id)
             )
             if price is None:
-                return self.handle_serializererror_response({"error": f"Invalid product or variant ID: {product_id} or {variant_id}"}, status_code=400)
+                return self.handle_serializererror_response(
+                    {
+                        "error": f"Invalid product or variant ID: {product_id} or {variant_id}"
+                    },
+                    status_code=400,
+                )
 
             cart_amount += price * quantity
 
@@ -118,15 +134,19 @@ class CheckOut(APIView,ResponseMixin):
                 promotional_discount = Decimal(promo_response["discount_applicable"])
                 price_after_discount = cart_amount - promotional_discount
             else:
-                return Response(promo_response, status=promo_response.get("status", 400))
+                return Response(
+                    promo_response, status=promo_response.get("status", 400)
+                )
         else:
             price_after_discount = cart_amount
 
         # Create order
         tranx_id = self.generate_transaction_id(order_id)
         payment_slipid = request.data.get("payment_slip_id")
-        payment_proof_instance = PaymentProof.objects.get(id=payment_slipid)
-
+        if payment_mode and payment_mode != "COD":
+            payment_proof_instance = PaymentProof.objects.get(id=payment_slipid) or None
+        else:
+            payment_proof_instance = None
         order = Order.objects.create(
             qr_payment_slip=payment_proof_instance,
             orderid=order_id,
@@ -135,6 +155,7 @@ class CheckOut(APIView,ResponseMixin):
             promocode_used=promocode,
             price_after_discount=price_after_discount,
             transaction_uuid=tranx_id,
+            payment_mode=payment_mode,
         )
 
         # Create order items
@@ -148,18 +169,24 @@ class CheckOut(APIView,ResponseMixin):
 
                 product = get_object_or_404(Product, id=product_id)
                 product_variant = (
-                    get_object_or_404(ProductVariant, id=variant_id) if variant_product and variant_id else None
+                    get_object_or_404(ProductVariant, id=variant_id)
+                    if variant_product and variant_id
+                    else None
                 )
-                
+
                 if product_color_id:
-                    product_color = get_object_or_404(VariantColors, id=product_color_id)
-                    pr_color=product_color.color
+                    product_color = get_object_or_404(
+                        VariantColors, id=product_color_id
+                    )
+                    pr_color = product_color.color
                 else:
                     # If product_color_id is not provided, set product_color to None
                     product_color = None
 
                 purchase_amount = (
-                    variant_price_map.get(variant_id) if variant_product and variant_id else product_price_map.get(product_id)
+                    variant_price_map.get(variant_id)
+                    if variant_product and variant_id
+                    else product_price_map.get(product_id)
                 )
 
                 order_items.append(
@@ -169,7 +196,7 @@ class CheckOut(APIView,ResponseMixin):
                         quantity=quantity,
                         purchase_amount=purchase_amount,
                         product_variant=product_variant,
-                        product_color=pr_color if product_color_id else product_color
+                        product_color=pr_color if product_color_id else product_color,
                     )
                 )
 
@@ -179,7 +206,9 @@ class CheckOut(APIView,ResponseMixin):
         shipping_details_data["order"] = order.id
         serializer = ShippingSerializer(data=shipping_details_data)
         if not serializer.is_valid():
-            return self.handle_serializererror_response(serializer.errors, status_code=400)
+            return self.handle_serializererror_response(
+                serializer.errors, status_code=400
+            )
         serializer.save()
 
         # Return response
@@ -195,77 +224,75 @@ class CheckOut(APIView,ResponseMixin):
         )
 
 
-
-
-
 class eSewaSuccessView(View):
     def get(self, request):
         # Get the encoded data from the query parameter
-        encoded_data = request.GET.get('data')
-        frontend_url=os.environ.get("NEXT_BASE_URL")
+        encoded_data = request.GET.get("data")
+        frontend_url = os.environ.get("NEXT_BASE_URL")
 
         if encoded_data:
             try:
                 # Decode the Base64 encoded data
-                decoded_data = base64.b64decode(encoded_data).decode('utf-8')
+                decoded_data = base64.b64decode(encoded_data).decode("utf-8")
                 print("Decoded Data:", decoded_data)  # For debugging
-                
+
                 # Parse the JSON data
                 data = json.loads(decoded_data)
                 print(data)
 
                 # Extract the relevant fields
-                transaction_uuid = data.get('transaction_uuid')
-                status = data.get('status')
-                total_amount = data.get('total_amount')
+                transaction_uuid = data.get("transaction_uuid")
+                status = data.get("status")
+                total_amount = data.get("total_amount")
                 # Add other fields as necessary
 
                 # Update the payment status in the database
                 payment = Order.objects.get(transaction_uuid=transaction_uuid)
 
-                redirect=frontend_url+"/track-order/"+str(payment.id)
+                redirect = frontend_url + "/track-order/" + str(payment.id)
                 print(redirect)
-                context={"order_id":payment.id,"redirect_to":redirect}
+                context = {"order_id": payment.id, "redirect_to": redirect}
                 if payment:
-                    if  status == "COMPLETE":
+                    if status == "COMPLETE":
                         cleaned_amount = total_amount.replace(",", "")
                         payment.payment_status = "completed"
                         payment.paid_amount = Decimal(cleaned_amount)
                         payment.full_clean()  # Validate the payment object
                         payment.save()
 
-                        return render(request,'success.html',context)
-                    
+                        return render(request, "success.html", context)
+
                     else:
                         payment.payment_status = "procesing"
                         payment.save()
-                        return render(request,'paymenterror.html')
+                        return render(request, "paymenterror.html")
 
                 else:
-                    return JsonResponse({'error': 'Transaction not found.'}, status=404)
+                    return JsonResponse({"error": "Transaction not found."}, status=404)
 
             except (ValueError, json.JSONDecodeError) as e:
                 print(f"Error decoding data: {e}")
-                return JsonResponse({'error': 'Invalid data.'}, status=400)
-        
-        return JsonResponse({'error': 'No data provided.'}, status=400)
-    
+                return JsonResponse({"error": "Invalid data."}, status=400)
+
+        return JsonResponse({"error": "No data provided."}, status=400)
+
+
 from django.shortcuts import render
 from django.utils.timezone import now
 from num2words import num2words
 
+
 @staticmethod
-@api_view(['GET'])
+@api_view(["GET"])
 def order_slip_view(request):
 
     # Fetch the order and related objects
-    order_id=request.GET.get("order_id")
-    response_type=request.GET.get("response_type")
+    order_id = request.GET.get("order_id")
+    response_type = request.GET.get("response_type")
     order_obj = get_object_or_404(
-        Order.objects.prefetch_related('orderitems','shippingdetails'),
-        id=order_id
+        Order.objects.prefetch_related("orderitems", "shippingdetails"), id=order_id
     )
-    
+
     # Calculate the total amount (you can also use order_obj.paid_amount directly if it's already stored)
     total_amount = order_obj.paid_amount or 0
 
@@ -275,91 +302,120 @@ def order_slip_view(request):
     paisa = int((total_amount - rupees) * 100)
 
     # Convert to words
-    rupees_in_words = num2words(rupees, lang='en') + ' rupees'
-    paisa_in_words = num2words(paisa, lang='en') + ' paisa' if paisa > 0 else ''
+    rupees_in_words = num2words(rupees, lang="en") + " rupees"
+    paisa_in_words = num2words(paisa, lang="en") + " paisa" if paisa > 0 else ""
 
-    amount_in_words = f"{rupees_in_words} and {paisa_in_words}" if paisa > 0 else rupees_in_words
+    amount_in_words = (
+        f"{rupees_in_words} and {paisa_in_words}" if paisa > 0 else rupees_in_words
+    )
     # amount_in_words = num2words(total_amount, lang='ne') + ' रुपैया'  # Nepali currency format
 
     # Prepare context with relevant order details
     print(order_obj)
     shipping_details = order_obj.shippingdetails
-    
+
     context = {
-        'order_date': order_obj.created_at,  
-        'order_status':order_obj.order_status,
-        'ordered_by': {
-            'name': shipping_details.fullname if shipping_details else '',
-            'phone': shipping_details.phonenumber if shipping_details else '',
-            'country': shipping_details.country if shipping_details else '',
-            'address': f"{shipping_details.city}, {shipping_details.district}" if shipping_details else ''
+        "order_date": order_obj.created_at,
+        "order_status": order_obj.order_status,
+        "ordered_by": {
+            "name": shipping_details.fullname if shipping_details else "",
+            "phone": shipping_details.phonenumber if shipping_details else "",
+            "country": shipping_details.country if shipping_details else "",
+            "address": (
+                f"{shipping_details.city}, {shipping_details.district}"
+                if shipping_details
+                else ""
+            ),
         },
-        'ship_to': {
-            'name': shipping_details.fullname if shipping_details else '',
-            'phone': shipping_details.phonenumber if shipping_details else '',
-            'country': shipping_details.country if shipping_details else '',
-            'address': f"{shipping_details.city}, {shipping_details.district}, {shipping_details.land_mark}" if shipping_details else ''
+        "ship_to": {
+            "name": shipping_details.fullname if shipping_details else "",
+            "phone": shipping_details.phonenumber if shipping_details else "",
+            "country": shipping_details.country if shipping_details else "",
+            "address": (
+                f"{shipping_details.city}, {shipping_details.district}, {shipping_details.land_mark}"
+                if shipping_details
+                else ""
+            ),
         },
-        'order_id': order_obj.orderid,
-        'delivery_note': shipping_details.additional_information if shipping_details else '',
-        'delivery_date': order_obj.last_modified,
-        'delivery_priority': 'Standard',  # Placeholder, customize as needed
-        'payment_status': order_obj.payment_status,
-        'payment_method': 'Esewa',  # Customize if necessary
-        'payment_date': order_obj.last_modified,
-        'order_items': [
+        "order_id": order_obj.orderid,
+        "delivery_note": (
+            shipping_details.additional_information if shipping_details else ""
+        ),
+        "delivery_date": order_obj.last_modified,
+        "delivery_priority": "Standard",  # Placeholder, customize as needed
+        "payment_status": order_obj.payment_status,
+        "payment_method": "Esewa",  # Customize if necessary
+        "payment_date": order_obj.last_modified,
+        "order_items": [
             {
-                'sn': index + 1,
-                'particulars': item.product.product_name,
-                'quantity': item.quantity,
-                'unit_price': item.purchase_amount,
-                'amount': item.quantity * item.purchase_amount
+                "sn": index + 1,
+                "particulars": item.product.product_name,
+                "quantity": item.quantity,
+                "unit_price": item.purchase_amount,
+                "amount": item.quantity * item.purchase_amount,
             }
             for index, item in enumerate(order_obj.orderitems.all())
         ],
-        'amount_in_words': amount_in_words
+        "amount_in_words": amount_in_words,
     }
     print(context)
-    if response_type=="template":
-        return render(request, 'orderslip.html', context)
-    
-    elif response_type=="json":
-        return ResponseMixin.handle_success_response(serialized_data=context,status_code=200,message="order fetched successfully")
+    if response_type == "template":
+        return render(request, "orderslip.html", context)
+
+    elif response_type == "json":
+        return ResponseMixin.handle_success_response(
+            serialized_data=context,
+            status_code=200,
+            message="order fetched successfully",
+        )
     else:
-        return ResponseMixin.handle_error_response(error_message="invalid response type",status_code=400)
-    
+        return ResponseMixin.handle_error_response(
+            error_message="invalid response type", status_code=400
+        )
+
 
 @staticmethod
-@api_view(['GET'])
+@api_view(["GET"])
 def secretkey(request):
-    secret="django-insecure-l0kz3a+3v$ohse*$k-@+)^=wyec91qy-u2ri%&1*+hb^#===(*'"
-    return Response({"success":True,"secret_key":secret})
+    secret = "django-insecure-l0kz3a+3v$ohse*$k-@+)^=wyec91qy-u2ri%&1*+hb^#===(*'"
+    return Response({"success": True, "secret_key": secret})
 
 
-
-class UploadPaymentProofView(APIView,ResponseMixin):
+class UploadPaymentProofView(APIView, ResponseMixin):
     def post(self, request, *args, **kwargs):
-        serializer = PaymentProofSerializer(data=request.data,context={"request":request})
+        serializer = PaymentProofSerializer(
+            data=request.data, context={"request": request}
+        )
         if serializer.is_valid():
             serializer.save()
-            return self.handle_success_response(message="success",status_code=200,serialized_data=serializer.data)
-        return self.handle_error_response(error_message=serializer.errors,status_code=400)
-    
+            return self.handle_success_response(
+                message="success", status_code=200, serialized_data=serializer.data
+            )
+        return self.handle_error_response(
+            error_message=serializer.errors, status_code=400
+        )
 
-class Promocode(APIView,ResponseMixin):
-    def post(self,request):
-        promo_code=request.data.get("promo_code")
-        cart_amount=request.data.get("cart_amount")
+
+class Promocode(APIView, ResponseMixin):
+    def post(self, request):
+        promo_code = request.data.get("promo_code")
+        cart_amount = request.data.get("cart_amount")
         try:
-            promo=PromoCode.objects.get(code=promo_code)
-            
+            promo = PromoCode.objects.get(code=promo_code)
+
             if not promo.is_valid():
-                return Response({"error": "Promo code is not valid or has expired."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": "Promo code is not valid or has expired."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             # Check if the promo code has already been used (if limited per user)
             if promo.limit_users and promo.count >= promo.max_users:
-                return Response({"error": "Promo code usage limit reached."}, status=status.HTTP_400_BAD_REQUEST)
-            
+                return Response(
+                    {"error": "Promo code usage limit reached."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             # Check if the promo is service-specific, and if applicable
             # You can implement your service-specific logic here if needed
 
@@ -369,88 +425,121 @@ class Promocode(APIView,ResponseMixin):
                 discount = promo.discount_amount
                 if promo.discount_amount > cart_amount:
                     discount = cart_amount  # Ensure it doesn't exceed the cart amount
-                return self.handle_success_response(message='success',serialized_data={"discount_amount":discount,"discount_type":promo.discount_type},status_code=200)
+                return self.handle_success_response(
+                    message="success",
+                    serialized_data={
+                        "discount_amount": discount,
+                        "discount_type": promo.discount_type,
+                    },
+                    status_code=200,
+                )
             elif promo.discount_type == PromoCode.DISCOUNT_TYPE_PERCENTAGE:
                 # Apply percentage discount
                 discount = (promo.discount_percentage / 100) * cart_amount
                 if promo.max_discount_amount and discount > promo.max_discount_amount:
-                    discount = promo.max_discount_amount  # Limit to max discount if applicable
+                    discount = (
+                        promo.max_discount_amount
+                    )  # Limit to max discount if applicable
 
-                return self.handle_success_response(message='success',serialized_data={"discount_amount":discount,"discount_type":promo.discount_type,"promocode":promo_code},status_code=200)
+                return self.handle_success_response(
+                    message="success",
+                    serialized_data={
+                        "discount_amount": discount,
+                        "discount_type": promo.discount_type,
+                        "promocode": promo_code,
+                    },
+                    status_code=200,
+                )
         except Exception as e:
-            return self.handle_error_response(error_message="Promocode does not exist",status_code=400)
+            return self.handle_error_response(
+                error_message="Promocode does not exist", status_code=400
+            )
+
 
 class ApplyPromoCodeView(APIView):
     permission_classes = [IsAuthenticated]
-    authentication_classes=[JWTAuthentication]
+    authentication_classes = [JWTAuthentication]
+
     @staticmethod
     def apply(self, request, *args, **kwargs):
         # Deserialize the input data
 
+        order_id = kwargs.get("order_id")
+        promo_code = kwargs.get("promo_code")
 
-            order_id = kwargs.get('order_id')
-            promo_code = kwargs.get('promo_code')
-            
-            # Retrieve the order and promo code
-            try:
-                order = Order.objects.get(orderid=order_id)
-            except Order.DoesNotExist:
-                return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
-            
-            try:
-                promo = PromoCode.objects.get(code=promo_code)
-            except PromoCode.DoesNotExist:
-                return Response({"error": "Invalid promo code."}, status=status.HTTP_400_BAD_REQUEST)
+        # Retrieve the order and promo code
+        try:
+            order = Order.objects.get(orderid=order_id)
+        except Order.DoesNotExist:
+            return Response(
+                {"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND
+            )
 
-            # Check if promo code is valid
-            if not promo.is_valid():
-                return Response({"error": "Promo code is not valid or has expired."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            promo = PromoCode.objects.get(code=promo_code)
+        except PromoCode.DoesNotExist:
+            return Response(
+                {"error": "Invalid promo code."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
-            # Check if the promo code has already been used (if limited per user)
-            if promo.limit_users and promo.count >= promo.max_users:
-                return Response({"error": "Promo code usage limit reached."}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Check if the promo is service-specific, and if applicable
-            # You can implement your service-specific logic here if needed
+        # Check if promo code is valid
+        if not promo.is_valid():
+            return Response(
+                {"error": "Promo code is not valid or has expired."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-            # Calculate the discount
-            if promo.discount_type == PromoCode.DISCOUNT_TYPE_FLAT:
-                # Apply flat discount
-                discount = promo.discount_amount
-                if promo.discount_amount > order.cart_amount:
-                    discount = order.cart_amount  # Ensure it doesn't exceed the cart amount
-            elif promo.discount_type == PromoCode.DISCOUNT_TYPE_PERCENTAGE:
-                # Apply percentage discount
-                discount = (promo.discount_percentage / 100) * order.cart_amount
-                if promo.max_discount_amount and discount > promo.max_discount_amount:
-                    discount = promo.max_discount_amount  # Limit to max discount if applicable
+        # Check if the promo code has already been used (if limited per user)
+        if promo.limit_users and promo.count >= promo.max_users:
+            return Response(
+                {"error": "Promo code usage limit reached."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-            # Update the order with the promo code details
-            order.promocode_used = promo
-            order.promotional_discount = discount
-            order.price_after_discount = order.cart_amount - discount
-            order.promocode_applied=True
-            
-            # Update the promo code count
-            if promo.limit_users:
-                promo.count += 1
-                promo.save()
+        # Check if the promo is service-specific, and if applicable
+        # You can implement your service-specific logic here if needed
 
-            # Save the updated order
-            order.save()
+        # Calculate the discount
+        if promo.discount_type == PromoCode.DISCOUNT_TYPE_FLAT:
+            # Apply flat discount
+            discount = promo.discount_amount
+            if promo.discount_amount > order.cart_amount:
+                discount = order.cart_amount  # Ensure it doesn't exceed the cart amount
+        elif promo.discount_type == PromoCode.DISCOUNT_TYPE_PERCENTAGE:
+            # Apply percentage discount
+            discount = (promo.discount_percentage / 100) * order.cart_amount
+            if promo.max_discount_amount and discount > promo.max_discount_amount:
+                discount = (
+                    promo.max_discount_amount
+                )  # Limit to max discount if applicable
 
-            return discount
-    
+        # Update the order with the promo code details
+        order.promocode_used = promo
+        order.promotional_discount = discount
+        order.price_after_discount = order.cart_amount - discount
+        order.promocode_applied = True
+
+        # Update the promo code count
+        if promo.limit_users:
+            promo.count += 1
+            promo.save()
+
+        # Save the updated order
+        order.save()
+
+        return discount
+
 
 class PromocodeListCreateView(generics.ListCreateAPIView):
-    authentication_classes=[JWTAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     queryset = PromoCode.objects.all()
     serializer_class = PromocodeSerializer
     pagination_class = PageNumberPagination
 
+
 class PromocodeRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    authentication_classes=[JWTAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     queryset = PromoCode.objects.all()
     serializer_class = PromocodeSerializer
@@ -459,7 +548,7 @@ class PromocodeRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 class OrderListCreateView(generics.ListCreateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    queryset = Order.objects.all().order_by('-created_at')
+    queryset = Order.objects.all().order_by("-created_at")
     serializer_class = OrderGenericsSerializer
     pagination_class = PageNumberPagination
 
@@ -468,20 +557,28 @@ class OrderListCreateView(generics.ListCreateAPIView):
         Optionally restricts the returned products to a search term using PostgreSQL full-text search.
         """
         queryset = super().get_queryset()
-        search_term = self.request.query_params.get('search', None)
+        search_term = self.request.query_params.get("search", None)
         if search_term:
             queryset = queryset.annotate(
-                search_vector=SearchVector('cart_amount', 'orderid', 'shippingdetails__fullname','shippingdetails__phonenumber','shippingdetails__email'),
+                search_vector=SearchVector(
+                    "cart_amount",
+                    "orderid",
+                    "shippingdetails__fullname",
+                    "shippingdetails__phonenumber",
+                    "shippingdetails__email",
+                ),
             )
 
             search_query = SearchQuery(search_term)
-            queryset = queryset.annotate(
-                search_rank=SearchRank('search_vector', search_query),
-            ).filter(
-                search_vector=search_query
-            ).order_by('-search_rank') 
+            queryset = (
+                queryset.annotate(
+                    search_rank=SearchRank("search_vector", search_query),
+                )
+                .filter(search_vector=search_query)
+                .order_by("-search_rank")
+            )
         return queryset
-    
+
     def get_serializer_context(self):
         """
         Add the request to the serializer's context.
@@ -494,41 +591,47 @@ class OrderListCreateView(generics.ListCreateAPIView):
         """
         raise MethodNotAllowed("POST method is not allowed on this endpoint.")
 
+
 class OrderRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    authentication_classes=[JWTAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    queryset = Order.objects.all().select_related('shippingdetails')
+    queryset = Order.objects.all().select_related("shippingdetails")
     serializer_class = OrderGenericsSerializer
 
 
 class MonthlyOrderInsightsAPIView(APIView):
     def get(self, request, *args, **kwargs):
         orders = (
-            Order.objects.filter(deleted_at__isnull=True)  # Exclude soft-deleted records
-            .annotate(month=TruncMonth('created_at'))  # Group by month
-            .values('month')
+            Order.objects.filter(
+                deleted_at__isnull=True
+            )  # Exclude soft-deleted records
+            .annotate(month=TruncMonth("created_at"))  # Group by month
+            .values("month")
             .annotate(
-                total_orders=Count('id'),
-                paid_orders=Count('id', filter=Q(payment_status='completed')),
-                delivered_orders=Count('id', filter=Q(order_status='product_received')),
-                shipped_orders=Count('id', filter=Q(order_status='shipped')),
-                confirmed_orders=Count('id', filter=Q(order_status='next_delivery')),
-                average_paid_amount=Sum('paid_amount'),  # Calculate the average paid amount
+                total_orders=Count("id"),
+                paid_orders=Count("id", filter=Q(payment_status="completed")),
+                delivered_orders=Count("id", filter=Q(order_status="product_received")),
+                shipped_orders=Count("id", filter=Q(order_status="shipped")),
+                confirmed_orders=Count("id", filter=Q(order_status="next_delivery")),
+                average_paid_amount=Sum(
+                    "paid_amount"
+                ),  # Calculate the average paid amount
             )
-            .order_by('month')
+            .order_by("month")
         )
 
         insights = [
             {
-                "month": order['month'].strftime('%B %Y'),
-                "total_orders": order['total_orders'],
-                "paid_orders": order['paid_orders'],
-                "delivered_orders": order['delivered_orders'],
-                "shipped_orders": order['shipped_orders'],
-                "confirmed_orders": order['confirmed_orders'],
-                "credited_amount": order['average_paid_amount'] or 0,  # Default to 0 if None
+                "month": order["month"].strftime("%B %Y"),
+                "total_orders": order["total_orders"],
+                "paid_orders": order["paid_orders"],
+                "delivered_orders": order["delivered_orders"],
+                "shipped_orders": order["shipped_orders"],
+                "confirmed_orders": order["confirmed_orders"],
+                "credited_amount": order["average_paid_amount"]
+                or 0,  # Default to 0 if None
             }
             for order in orders
         ]
 
-        return Response({"success":True,"message":"Success","insight":insights})
+        return Response({"success": True, "message": "Success", "insight": insights})

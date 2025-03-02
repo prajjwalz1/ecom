@@ -147,7 +147,7 @@ class Order(CustomizedModel):
             ("processing", "procesing"),
             ("completed", "completed"),
         ),
-        default=None,
+        default="pending",
         null=True,
         blank=True,
     )

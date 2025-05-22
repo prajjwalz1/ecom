@@ -144,7 +144,10 @@ class CheckOut(APIView, ResponseMixin):
         tranx_id = self.generate_transaction_id(order_id)
         payment_slipid = request.data.get("payment_slip_id")
         if payment_mode and payment_mode != "COD":
-            payment_proof_instance = PaymentProof.objects.get(id=payment_slipid)
+            try:
+                payment_proof_instance = PaymentProof.objects.get(id=payment_slipid)
+            except:
+                return RE
         else:
             payment_proof_instance = None
         order = Order.objects.create(

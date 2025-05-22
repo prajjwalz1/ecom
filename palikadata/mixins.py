@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils import timezone
 
@@ -23,7 +24,7 @@ class CustomizedModel(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(blank=True, null=True, editable=False)
     objects = CustomManager()
-    all_objects = models.Manager()  
+    all_objects = models.Manager()
 
     def delete(self, hard=False, *args, **kwargs):
         if hard:

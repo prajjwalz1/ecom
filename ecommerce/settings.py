@@ -9,10 +9,12 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+
 import os
-from pathlib import Path
-from dotenv import load_dotenv
 from datetime import timedelta
+from pathlib import Path
+
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,74 +24,72 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-$9dg)o^q6js4ag=n=w$l=fz@maqa%%p)hf4att0t818^bn(&!7'
+SECRET_KEY = "django-insecure-$9dg)o^q6js4ag=n=w$l=fz@maqa%%p)hf4att0t818^bn(&!7"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'product',
-    'rest_framework',
-    'rest_framework_simplejwt',
-    'ckeditor',
-    'ckeditor_uploader',
-    'debug_toolbar',
-    'corsheaders',
-    'Order',
-    'user',
-    'authentication',
-    'EmiService',
-    'DynamicPages'
-
-
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "product",
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "ckeditor",
+    "ckeditor_uploader",
+    "debug_toolbar",
+    "corsheaders",
+    "Order",
+    "user",
+    "authentication",
+    "EmiService",
+    "DynamicPages",
+    "palikadata",
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
+    "corsheaders.middleware.CorsMiddleware",
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 INTERNAL_IPS = [
     # Loopback IP for local development
-    '127.0.0.1',
+    "127.0.0.1",
 ]
-ROOT_URLCONF = 'ecommerce.urls'
+ROOT_URLCONF = "ecommerce.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'ecommerce.wsgi.application'
+WSGI_APPLICATION = "ecommerce.wsgi.application"
 
 
 # Database
@@ -97,13 +97,13 @@ WSGI_APPLICATION = 'ecommerce.wsgi.application'
 
 load_dotenv()
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASS'),
-        'HOST': os.environ.get('DB_HOST'),
-        'PORT': '5432'
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("DB_NAME"),
+        "USER": os.environ.get("DB_USER"),
+        "PASSWORD": os.environ.get("DB_PASS"),
+        "HOST": os.environ.get("DB_HOST"),
+        "PORT": "5432",
     },
 }
 # Password validation
@@ -111,16 +111,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -128,9 +128,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -139,25 +139,26 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 
-STATIC_ROOT  = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 
-MEDIA_URL = '/media/'
+MEDIA_URL = "/media/"
 
 # Directory for storing media files
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
+# logging
 
-#logging
-
-LOGGING_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'debug.log')
+LOGGING_FILE_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "debug.log"
+)
 
 # LOGGING = {
 #     'version': 1,
@@ -183,56 +184,57 @@ LOGGING_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'de
 # }
 
 
-
 CKEDITOR_UPLOAD_PATH = "uploads/"
 CKEDITOR_CONFIGS = {
-    'default': {
-        'toolbar': 'Custom',
-        'toolbar_Custom': [
-            ['Bold', 'Italic', 'Underline'],
-            ['NumberedList', 'BulletedList'],
-            ['Link', 'Unlink'],
-            ['Image','video', 'Table', 'HorizontalRule'],
-            ['Source'],
+    "default": {
+        "toolbar": "Custom",
+        "toolbar_Custom": [
+            ["Bold", "Italic", "Underline"],
+            ["NumberedList", "BulletedList"],
+            ["Link", "Unlink"],
+            ["Image", "video", "Table", "HorizontalRule"],
+            ["Source"],
         ],
-        'height': 300,
-        'filebrowserUploadUrl': '/ckeditor/upload/',  # URL for file uploads
-        'filebrowserImageUploadUrl': '/ckeditor/upload/',  # URL for image uploads
+        "height": 300,
+        "filebrowserUploadUrl": "/ckeditor/upload/",  # URL for file uploads
+        "filebrowserImageUploadUrl": "/ckeditor/upload/",  # URL for image uploads
     },
 }
 CORS_ALLOW_ALL_ORIGINS = True
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'  # e.g., smtp.gmail.com for Gmail
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"  # e.g., smtp.gmail.com for Gmail
 EMAIL_PORT = 587  # Typically 587 for TLS, or 465 for SSL
 EMAIL_USE_TLS = True  # True for TLS, False for SSL
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
-ADMIN_EMAIL = os.getenv('ADMIN_EMAIL')
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
 
 
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,  # The number of items per page
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,  # The number of items per page
 }
 
 # Optional: Add settings for JWT token lifetime
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),  # Adjust the access token lifetime as per your requirement
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': False,  # Whether to rotate refresh tokens
-    'BLACKLIST_AFTER_ROTATION': False,  # If True, the old refresh token will be blacklisted
+    "ACCESS_TOKEN_LIFETIME": timedelta(
+        minutes=5
+    ),  # Adjust the access token lifetime as per your requirement
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": False,  # Whether to rotate refresh tokens
+    "BLACKLIST_AFTER_ROTATION": False,  # If True, the old refresh token will be blacklisted
 }
-AUTH_USER_MODEL = 'user.CustomUser'  # Point to your custom user model
+AUTH_USER_MODEL = "user.CustomUser"  # Point to your custom user model
 
 
 Q_CLUSTER = {
-    'name': 'DjangoORM',
-    'orm': 'default',  # Use Django's ORM to store results
+    "name": "DjangoORM",
+    "orm": "default",  # Use Django's ORM to store results
 }
 
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  # or 'redis://127.0.0.1:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # same as broker
+CELERY_BROKER_URL = "redis://localhost:6379/0"  # or 'redis://127.0.0.1:6379/0'
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"  # same as broker

@@ -11,6 +11,7 @@ from product.models import Brand, Category, Tag
 from product.serializers import BrandSerializer, CategorySerializer, GetTagSerializer
 
 User = get_user_model()
+from palikadata.utils.user_organization_and_org_id import GetUserOrganizationAndOrgId
 
 
 # Create your views here.
@@ -50,13 +51,23 @@ class CustomTokenObtainView(APIView, ResponseMixin):
             refresh_token = str(refresh)
 
             # Return tokens in custom format
-
+            try:
+                user_related_palika_project_data = (
+                    GetUserOrganizationAndOrgId.get_user_organization_id(user)
+                )
+            except Exception as e:
+                user_related_palika_project_data = {
+                    "message": "No organization found for this user",
+                    "error": str(e),
+                    "success": False,
+                }
             # Prepare response data
             response_data = {
                 "success": True,
                 "message": "logged in successfully",
                 "access_token": access_token,
                 "refresh_token": str(refresh),
+                "palika_data": user_related_palika_project_data,
             }
 
             return Response(response_data)

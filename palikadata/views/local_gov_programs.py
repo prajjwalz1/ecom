@@ -50,7 +50,6 @@ class GovernmentProgramViewSet(viewsets.ModelViewSet, ResponseMixin):
             )
 
         karmachari_sakha_details = self.request.user.karmachari_details.first()
-        print(karmachari_sakha_details.is_admin)
         if karmachari_sakha_details:
             sakha = karmachari_sakha_details.sakha.first()
             karmachari_sakha_id = sakha.id if sakha else None

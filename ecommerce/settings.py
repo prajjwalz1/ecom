@@ -221,7 +221,7 @@ REST_FRAMEWORK = {
 # Optional: Add settings for JWT token lifetime
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(
-        minutes=5
+        minutes=30
     ),  # Adjust the access token lifetime as per your requirement
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": False,  # Whether to rotate refresh tokens

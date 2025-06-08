@@ -1,4 +1,5 @@
 from palikadata.models.local_government import LocalGovernment
+from palikadata.models.palika_saakha import PalikaSakha
 from palikadata.models.ward import Ward
 from product.mixins import *
 
@@ -42,8 +43,16 @@ class PalikaProgram(CustomizedModel):
             ("ongoing", "Ongoing"),
             ("completed", "Completed"),
             ("suspended", "Suspended"),
+            ("not_started", "Not Started"),
         ),
-        default="ongoing",
+        default="not_started",
+    )
+    related_sakha = models.ForeignKey(
+        "PalikaSakha",
+        on_delete=models.PROTECT,
+        related_name="related_programs",
+        null=True,
+        blank=True,
     )
 
     def __str__(self):

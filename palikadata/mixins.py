@@ -49,7 +49,7 @@ class CustomizedModel(models.Model):
 
 class ResponseMixin:
     """
-    Handles Both Error and Successfull response
+    Handles both error and successful responses.
     """
 
     @staticmethod
@@ -61,12 +61,11 @@ class ResponseMixin:
 
     @staticmethod
     def handle_serializererror_response(serializer_errors, status_code):
-        # Combine all error messages into a single response structure
-        error_messages = []
-        for field, messages in serializer_errors.items():
-            for message in messages:
-                error_messages.append(f"{field}: {message}")
-
+        error_messages = [
+            f"{field}: {msg}"
+            for field, messages in serializer_errors.items()
+            for msg in messages
+        ]
         return Response(
             {"success": False, "errors": error_messages},
             status=status_code,
@@ -74,49 +73,34 @@ class ResponseMixin:
 
     @staticmethod
     def handle_success_response(status_code, serialized_data=None, message=None):
-        response = {"success": True}
-
-        if message:
-            response["message"] = message
-        if serialized_data:
-            response["data"] = serialized_data
-        else:
-            response["data"] = []
         return Response(
-            response,
+            {
+                "success": True,
+                "message": message or "Request completed successfully",
+                "data": serialized_data or [],
+            },
             status=status_code,
         )
 
-    def handle_paginated_response(
-        status_code, serialized_data=None, message=None, page_obj=None
-    ):
-        response = {"success": True}
-
-        if message:
-            response["message"] = message
-
-        if serialized_data:
-            response["data"] = serialized_data
-        else:
-            response["data"] = []
-
-        # Add pagination info if page_obj is provided
-        if page_obj:
-            response["pagination"] = {
-                "count": page_obj.paginator.count,
-                "total_pages": page_obj.paginator.num_pages,
-                "current_page": page_obj.number,  # Correctly reflect the current page
-                "next_page": (
-                    page_obj.next_page_number() if page_obj.has_next() else None
-                ),
-                "previous_page": (
-                    page_obj.previous_page_number() if page_obj.has_previous() else None
-                ),
-            }
+    def get_paginated_response_with_custom_format(self, data, message=None):
+        assert self.paginator is not None, (
+            "get_paginated_response_with_custom_format called without paginator. "
+            "Did you forget to set pagination_class?"
+        )
 
         return Response(
-            response,
-            status=status_code,
+            {
+                "success": True,
+                "message": message or "Request completed successfully",
+                "data": data,
+                "pagination": {
+                    "count": self.paginator.page.paginator.count,
+                    "total_pages": self.paginator.page.paginator.num_pages,
+                    "current_page": self.paginator.page.number,
+                    "next_page": self.paginator.get_next_link(),
+                    "previous_page": self.paginator.get_previous_link(),
+                },
+            }
         )
 
 

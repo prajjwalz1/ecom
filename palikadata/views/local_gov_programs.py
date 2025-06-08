@@ -1,11 +1,15 @@
 from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication as JWT
 
 from palikadata.mixins import ResponseMixin
-from palikadata.models.palika_program import PalikaProgram
-from palikadata.serializers.palika_program import localgovProgramSerializer
+from palikadata.models.palika_program import PalikaProgram, PalikaProgramDocument
+from palikadata.serializers.palika_program import (
+    PalikaProgramDocumentSerializer,
+    localgovProgramSerializer,
+)
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -90,4 +94,45 @@ class GovernmentProgramViewSet(viewsets.ModelViewSet, ResponseMixin):
             return self.handle_error_response(
                 status_code=400,
                 error_message=f"Failed to fetch Palika Program: {str(e)}",
+            )
+
+
+class ProgramDocumentViewSet(ResponseMixin, APIView):
+    """
+    A viewset for handling program documents.
+    """
+
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWT]  # Use default authentication
+
+    def get(self, request, *args, **kwargs):
+        try:
+            palika_program_id = kwargs.get("pk")
+            if not palika_program_id:
+                return self.handle_error_response(
+                    status_code=400,
+                    error_message="Palika Program ID is required.",
+                )
+
+            palika_program_docs = PalikaProgramDocument.objects.filter(
+                palika_program__id=palika_program_id
+            )
+            # serialzier=
+            serialzier = PalikaProgramDocumentSerializer(
+                palika_program_docs, many=True, context={"request": request}
+            )
+            return self.handle_success_response(
+                status_code=200,
+                serialized_data=serialzier.data,
+                message="Documents fetched successfully",
+            )
+        except PalikaProgram.DoesNotExist:
+            return self.handle_error_response(
+                status_code=404,
+                error_message="Palika Program not found.",
+            )
+        except Exception as e:
+            return self.handle_error_response(
+                status_code=500,
+                error_message=f"An error occurred: {str(e)}",
             )

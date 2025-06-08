@@ -7,7 +7,10 @@ from palikadata.views.distribution_document import DistributionDocumentViewSet
 from palikadata.views.distribution_item import DistributionItemViewSet
 from palikadata.views.distribution_record import DistributionRecordViewSet
 from palikadata.views.local_gov import LocalGovernmentViewSet
-from palikadata.views.local_gov_programs import GovernmentProgramViewSet
+from palikadata.views.local_gov_programs import (
+    GovernmentProgramViewSet,
+    ProgramDocumentViewSet,
+)
 
 router = DefaultRouter()
 router.register(r"programs", GovernmentProgramViewSet, basename="palika_programs")
@@ -23,4 +26,17 @@ router.register(
 router.register(
     r"distributionitems", DistributionItemViewSet, basename="distribution_items"
 )
-urlpatterns = router.urls
+
+urlpatterns = [
+    # Add any custom paths here, for example:
+    path(
+        "programdocuments/<int:pk>",
+        ProgramDocumentViewSet.as_view(),
+        name="custom_view",
+    ),
+]
+
+urlpatterns += router.urls
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

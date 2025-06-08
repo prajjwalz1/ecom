@@ -9,6 +9,13 @@ class PalikaSakha(CustomizedModel):
     Model to represent a Palika Sakha (Branch) within a local government.
     """
 
+    palika = models.ForeignKey(
+        "palikadata.LocalGovernment",
+        on_delete=models.CASCADE,
+        related_name="palika_sakhas",
+        null=True,
+        blank=True,
+    )
     name = models.CharField(max_length=255, null=False, blank=False, unique=True)
     sakha_pramukh = models.ForeignKey(
         PalikaKarmachari,

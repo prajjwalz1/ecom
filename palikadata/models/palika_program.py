@@ -1,7 +1,42 @@
+import nepali_datetime
+from django.utils import timezone
+
 from palikadata.models.local_government import LocalGovernment
 from palikadata.models.palika_saakha import PalikaSakha
 from palikadata.models.ward import Ward
 from product.mixins import *
+
+
+class FiscalYear(models.Model):
+    """
+    Model to represent a fiscal year.
+    Bikram Sambat fiscal year: If month > 3 (i.e., after Chaitra), fiscal year is current year/next year.
+    If month <= 3 (i.e., Chaitra or before), fiscal year is previous year/current year.
+    """
+
+    year = models.CharField(max_length=9, unique=True)  # e.g., "2078/79"
+    is_current = models.BooleanField(
+        default=False, help_text="Indicates if this is the current fiscal year."
+    )
+
+    def __str__(self):
+        return self.year
+
+    class Meta:
+        verbose_name = "Fiscal Year"
+        verbose_name_plural = "Fiscal Years"
+
+
+class PalikaProgramDocument(models.Model):
+    palika_program = models.ForeignKey(
+        "PalikaProgram", on_delete=models.CASCADE, related_name="program_documents"
+    )
+    name = models.CharField(max_length=255)
+    document = models.FileField(upload_to="palika_program_documents/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
 
 
 class PalikaProgram(CustomizedModel):
@@ -54,6 +89,13 @@ class PalikaProgram(CustomizedModel):
         null=True,
         blank=True,
     )
+    fical_year = models.ForeignKey(
+        FiscalYear,
+        on_delete=models.PROTECT,
+        related_name="fiscal_year_programs",
+        null=True,
+        blank=True,
+    )
 
     def __str__(self):
         return (
@@ -61,6 +103,12 @@ class PalikaProgram(CustomizedModel):
             if self.program_name
             else str(None)
         )
+
+    def get_all_documents(self):
+        """
+        Returns all documents related to this PalikaProgram.
+        """
+        return self.program_documents.all()
 
     class Meta:
         verbose_name = "Palika Program"

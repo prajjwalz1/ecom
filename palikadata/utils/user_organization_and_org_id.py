@@ -26,6 +26,7 @@ class GetUserOrganizationAndOrgId:
                 "karmachari_id": karmachari_sakha_details.id,
                 "fiscal_year": fiscal_year.year,
                 "fiscal_year_id": fiscal_year.id,
+                "is_organization_admin": karmachari_sakha_details.is_admin,
             }
 
         return None

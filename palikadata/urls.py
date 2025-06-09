@@ -31,7 +31,7 @@ router.register(
 urlpatterns = [
     # Add any custom paths here, for example:
     path(
-        "programdocuments/<int:pk>",
+        "programdocuments/",
         ProgramDocumentViewSet.as_view(),
         name="custom_view",
     ),

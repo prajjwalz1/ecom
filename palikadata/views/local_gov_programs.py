@@ -169,9 +169,9 @@ class ProgramDocumentViewSet(ResponseMixin, OrgDeptQuerysetMixin, APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWT]  # Use default authentication
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         try:
-            palika_program_id = kwargs.get("pk")
+            palika_program_id = request.query_params.get("palika_program_id")
             if not palika_program_id:
                 return self.handle_error_response(
                     status_code=400,
@@ -203,69 +203,93 @@ class ProgramDocumentViewSet(ResponseMixin, OrgDeptQuerysetMixin, APIView):
                 error_message=f"An error occurred: {str(e)}",
             )
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
         try:
-            palika_program_id = kwargs.get("pk")
-
-            if not palika_program_id:
-                return self.handle_error_response(
-                    status_code=400,
-                    error_message="Palika Program ID is required.",
-                )
-
-            # Fetch the program and check existence
+            # Get program
             try:
-                palika_program = PalikaProgram.objects.get(id=palika_program_id)
+                palika_program = PalikaProgram.objects.get(
+                    id=request.query_params.get("palika_program_id")
+                )
             except PalikaProgram.DoesNotExist:
-                return self.handle_error_response(
-                    status_code=404,
-                    error_message="Palika Program not found.",
+                return Response(
+                    {"success": True, "message": "Palika Program not found."},
+                    status=status.HTTP_404_NOT_FOUND,
                 )
 
-            # Restriction: Only allow if user's organization and sakha match the program
-            user = request.user
-            karmachari_details = getattr(user, "karmachari_details", None)
-            if not karmachari_details.exists():
-                return self.handle_error_response(
-                    status_code=403,
-                    error_message="User does not have sakha/organization details.",
+            # Get user’s karmachari details
+            karmachari_qs = request.user.karmachari_details.first()
+            print(karmachari_qs.palika)
+            if not karmachari_qs:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "User does not have sakha/organization details.",
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
                 )
-            karmachari_detail = karmachari_details.first()
-            user_org_id = getattr(karmachari_detail, "organization_id", None)
-            user_sakha = (
-                karmachari_detail.sakha.first()
-                if karmachari_detail.sakha.exists()
-                else None
-            )
+
+            karmachari = karmachari_qs
+            print(karmachari.palika_sakha)
+            user_org_id = getattr(karmachari, "palika", None).id
+            user_sakha = karmachari.palika_sakha
             user_sakha_id = user_sakha.id if user_sakha else None
 
-            if (
-                str(palika_program.local_government_id) != str(user_org_id)
-                or str(palika_program.related_sakha_id) != str(user_sakha_id)
-            ) and not karmachari_detail.is_admin:
-                return self.handle_error_response(
-                    status_code=403,
-                    error_message="You do not have permission to add documents to this program.",
+            # Permissions: Must match organization AND sakha, unless is_admin
+            if not karmachari.is_admin:
+                print("karmachari is not admin")
+                if (
+                    palika_program.local_government_id != user_org_id
+                    or palika_program.related_sakha_id != user_sakha_id
+                ):
+                    return Response(
+                        {
+                            "success": False,
+                            "message": "You do not have permission to add documents to this program.",
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+
+            # Multiple file uploads
+            files = request.FILES.getlist("file")
+            if not files:
+                return Response(
+                    {"success": False, "message": "No files provided."},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            # Validate and save document
-            serializer = PalikaProgramDocumentSerializer(
-                data=request.data, context={"request": request}
-            )
-            if serializer.is_valid():
-                serializer.save(palika_program=palika_program)
-                return self.handle_success_response(
-                    status_code=201,
-                    serialized_data=serializer.data,
-                    message="Document added successfully",
+            created_docs = []
+            errors = []
+
+            for file in files:
+                data = {
+                    "name": file.name,
+                    "document": file,
+                    "organization": user_org_id,
+                    "department": user_sakha_id,
+                    "palika_program": palika_program.id,
+                }
+                serializer = PalikaProgramDocumentSerializer(
+                    data=data, context={"request": request}
+                )
+                if serializer.is_valid():
+                    serializer.save(palika_program=palika_program)
+                    created_docs.append(serializer.data)
+                else:
+                    errors.append(serializer.errors)
+
+            if created_docs:
+                return Response(
+                    {
+                        "message": "Documents uploaded successfully.",
+                        "documents": created_docs,
+                    },
+                    status=status.HTTP_201_CREATED,
                 )
             else:
-                return self.handle_error_response(
-                    status_code=400,
-                    error_message=serializer.errors,
-                )
+                return Response({"detail": errors}, status=status.HTTP_400_BAD_REQUEST)
+
         except Exception as e:
-            return self.handle_error_response(
-                status_code=500,
-                error_message=f"An error occurred: {str(e)}",
+            return Response(
+                {"detail": f"An error occurred: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

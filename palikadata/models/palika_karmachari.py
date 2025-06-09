@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
 
-from palikadata.mixins import CustomizedModel
+from palikadata.mixins.datetimemodelmixin import CustomizedModel
 from user.models import CustomUser
 
 
@@ -33,6 +33,7 @@ class PalikaKarmachari(CustomizedModel):
         "palikadata.PalikaSakha",
         on_delete=models.SET_NULL,
         related_name="karmacharis",
+        
         null=True,
         blank=True,
     )

@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import permissions, viewsets
 
-from palikadata.mixins import ResponseMixin
+from palikadata.mixins.response_mixin import ResponseMixin
 from palikadata.models.local_government import LocalGovernment
 from palikadata.permissions.superuser import IsSuperUser
 from palikadata.serializers.local_government import LocalGovernmentSerializer

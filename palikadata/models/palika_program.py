@@ -1,6 +1,7 @@
 import nepali_datetime
 from django.utils import timezone
 
+from palikadata.mixins.palikamodelmixin import PalikaSakhaBaseModel
 from palikadata.models.local_government import LocalGovernment
 from palikadata.models.palika_saakha import PalikaSakha
 from palikadata.models.ward import Ward
@@ -27,12 +28,15 @@ class FiscalYear(models.Model):
         verbose_name_plural = "Fiscal Years"
 
 
-class PalikaProgramDocument(models.Model):
+class PalikaProgramDocument(CustomizedModel, PalikaSakhaBaseModel):
     palika_program = models.ForeignKey(
         "PalikaProgram", on_delete=models.CASCADE, related_name="program_documents"
     )
+
     name = models.CharField(max_length=255)
-    document = models.FileField(upload_to="palika_program_documents/")
+    document = models.FileField(
+        upload_to="palika_program_documents/", null=True, blank=True
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -93,6 +97,27 @@ class PalikaProgram(CustomizedModel):
         FiscalYear,
         on_delete=models.PROTECT,
         related_name="fiscal_year_programs",
+        null=True,
+        blank=True,
+    )
+    is_approved = models.BooleanField(
+        default=False,
+        help_text="Indicates if the program has been approved by the local government.",
+    )
+    approved_by = models.ForeignKey(
+        "palikadata.PalikaKarmachari",
+        on_delete=models.SET_NULL,
+        related_name="approved_programs",
+        null=True,
+        blank=True,
+    )
+    is_completed_approved = models.BooleanField(
+        default=False, help_text="Indicates if the program has been completed."
+    )
+    completed_approved_by = models.ForeignKey(
+        "palikadata.PalikaKarmachari",
+        on_delete=models.SET_NULL,
+        related_name="completed_programs",
         null=True,
         blank=True,
     )

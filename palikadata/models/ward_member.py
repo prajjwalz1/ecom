@@ -1,6 +1,6 @@
 from django.db import models
 
-from palikadata.mixins import CustomizedModel
+from palikadata.views.mixins.mixins import CustomizedModel
 from palikadata.models.local_government import LocalGovernment
 from palikadata.models.ward import Ward
 

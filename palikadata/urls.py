@@ -9,6 +9,7 @@ from palikadata.views.distribution_record import DistributionRecordViewSet
 from palikadata.views.local_gov import LocalGovernmentViewSet
 from palikadata.views.local_gov_programs import (
     GovernmentProgramViewSet,
+    ProgramApprovalAPIView,
     ProgramDocumentViewSet,
 )
 
@@ -34,6 +35,7 @@ urlpatterns = [
         ProgramDocumentViewSet.as_view(),
         name="custom_view",
     ),
+    path("programaprroval", ProgramApprovalAPIView.as_view(), name="program_approval"),
 ]
 
 urlpatterns += router.urls

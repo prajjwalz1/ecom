@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 
-from palikadata.mixins import ResponseMixin
+from palikadata.mixins.response_mixin import ResponseMixin
 from palikadata.models.distribution import DistributionRecord
 from palikadata.serializers.item_distribution import (
     DistributionItemSerializer,

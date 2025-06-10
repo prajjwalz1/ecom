@@ -33,7 +33,6 @@ class PalikaKarmachari(CustomizedModel):
         "palikadata.PalikaSakha",
         on_delete=models.SET_NULL,
         related_name="karmacharis",
-        
         null=True,
         blank=True,
     )

@@ -8,14 +8,13 @@ from palikadata.views.distribution_item import DistributionItemViewSet
 from palikadata.views.distribution_record import DistributionRecordViewSet
 from palikadata.views.local_gov import LocalGovernmentViewSet
 from palikadata.views.local_gov_programs import (
-    GovernmentProgramViewSet,
+    GovernmentProgramAPIView,
     ProgramApprovalAPIView,
-    ProgramDocumentViewSet,
+    ProgramDocumentView,
 )
 from palikadata.views.sakha import PalikaSakhaViewSet
 
 router = DefaultRouter()
-router.register(r"programs", GovernmentProgramViewSet, basename="palika_programs")
 router.register(r"govname", LocalGovernmentViewSet, basename="local_gov")
 router.register(
     r"distributiondocuments",
@@ -34,11 +33,22 @@ urlpatterns = [
     # Add any custom paths here, for example:
     path(
         "programdocuments/",
-        ProgramDocumentViewSet.as_view(),
+        ProgramDocumentView.as_view(),
         name="custom_view",
     ),
     path("programaprroval", ProgramApprovalAPIView.as_view(), name="program_approval"),
+    path(
+        "programs",
+        GovernmentProgramAPIView.as_view(),
+        name="palika_programs",
+    ),
+    path(
+        "programs/<int:pk>/",
+        GovernmentProgramAPIView.as_view(),
+        name="palika_programs",
+    ),
 ]
+
 
 urlpatterns += router.urls
 

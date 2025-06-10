@@ -9,7 +9,6 @@ class OrgDeptQuerysetMixin:
             sakha = karmachari_detail.palika_sakha
 
             if user_palika and sakha:
-                print(user_palika, sakha, "this is filter")
                 return queryset.filter(organization=user_palika, department=sakha)
 
         return queryset.none()

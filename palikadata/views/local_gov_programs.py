@@ -1,5 +1,4 @@
 from rest_framework import status, viewsets
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -8,16 +7,12 @@ from rest_framework_simplejwt.authentication import JWTAuthentication as JWT
 from palikadata.mixins.palikafiltration_logic import OrgDeptQuerysetMixin
 from palikadata.mixins.response_mixin import ResponseMixin
 from palikadata.models.palika_program import PalikaProgram, PalikaProgramDocument
+from palikadata.pagination import StandardResultsSetPagination
+from palikadata.permissions.org_staff import IsSamePalikaKarmachari
 from palikadata.serializers.palika_program import (
+    LocalGovProgramSerializer,
     PalikaProgramDocumentSerializer,
-    localgovProgramSerializer,
 )
-
-
-class StandardResultsSetPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = "page_size"
-    max_page_size = 100
 
 
 class GovernmentProgramViewSet(viewsets.ModelViewSet, ResponseMixin):
@@ -25,11 +20,11 @@ class GovernmentProgramViewSet(viewsets.ModelViewSet, ResponseMixin):
     A viewset for viewing and editing PalikaProgram instances.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsSamePalikaKarmachari]
     authentication_classes = [JWT]  # Use default authentication
 
     queryset = PalikaProgram.objects.all()
-    serializer_class = localgovProgramSerializer
+    serializer_class = LocalGovProgramSerializer
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
@@ -83,7 +78,7 @@ class GovernmentProgramViewSet(viewsets.ModelViewSet, ResponseMixin):
             message="Palika Programs fetched successfully",
         )
 
-    def retrieve(self, request, *args, **kwargs):
+    def retrieve(self, _request, *_args, **_kwargs):
         try:
             instance = self.get_object()
             serializer = self.get_serializer(instance)

@@ -1,5 +1,6 @@
 from django.db import models
 
+from palikadata.mixins import palikamodelmixin
 from palikadata.mixins.datetimemodelmixin import CustomizedModel
 from palikadata.models.palika_karmachari import PalikaKarmachari
 

@@ -12,6 +12,7 @@ from palikadata.views.local_gov_programs import (
     ProgramApprovalAPIView,
     ProgramDocumentViewSet,
 )
+from palikadata.views.sakha import PalikaSakhaViewSet
 
 router = DefaultRouter()
 router.register(r"programs", GovernmentProgramViewSet, basename="palika_programs")
@@ -27,6 +28,7 @@ router.register(
 router.register(
     r"distributionitems", DistributionItemViewSet, basename="distribution_items"
 )
+router.register(r"palika-sakha", PalikaSakhaViewSet)
 
 urlpatterns = [
     # Add any custom paths here, for example:

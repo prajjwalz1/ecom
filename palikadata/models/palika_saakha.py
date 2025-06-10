@@ -17,7 +17,7 @@ class PalikaSakha(CustomizedModel):
         null=True,
         blank=True,
     )
-    name = models.CharField(max_length=255, null=False, blank=False, unique=True)
+    name = models.CharField(max_length=255, null=False, blank=False)
     sakha_pramukh = models.ForeignKey(
         PalikaKarmachari,
         on_delete=models.PROTECT,
@@ -26,9 +26,11 @@ class PalikaSakha(CustomizedModel):
         blank=True,
     )
 
+    class Meta:
+        unique_together = ('palika', 'name')
+
     def __str__(self):
         return self.name if self.name else str(None)
-
 
 class PalikaSakhaPramukhHistory(CustomizedModel):
     """

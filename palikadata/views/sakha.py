@@ -20,7 +20,7 @@ class PalikaSakhaViewSet(ResponseMixin, viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
 
-        palika_id = request.data.get("palika")
+        palika_id = request.data.get("local_government")
         if palika_id:
             try:
                 user_karmachari = PalikaKarmachari.objects.get(

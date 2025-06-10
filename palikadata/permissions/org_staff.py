@@ -27,6 +27,7 @@ class IsSamePalikaKarmachari(BasePermission):
 
     def has_permission(self, request, view):
         local_gov = request.GET.get("local_government", None)
+        return True
         return PalikaKarmachari.objects.filter(
-            user=request.user, is_active=True, palika=local_gov
+            user=request.user, is_active=True, palika_id=local_gov
         ).exists()

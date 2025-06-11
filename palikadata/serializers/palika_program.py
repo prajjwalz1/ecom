@@ -5,16 +5,7 @@ from palikadata.models.palika_program import (
     PalikaProgram,
     PalikaProgramDocument,
 )
-
-
-class PalikaProgramDocumentSerializer(serializers.ModelSerializer):
-    """
-    Serializer for PalikaProgramDocument model.
-    """
-
-    class Meta:
-        model = PalikaProgramDocument
-        fields = "__all__"
+from palikadata.serializers.local_government import LocalGovernmentSerializer
 
 
 class FiscalYearSerializer(serializers.ModelSerializer):
@@ -29,10 +20,22 @@ class LocalGovProgramSerializer(serializers.ModelSerializer):
     """
 
     fiscal_year = FiscalYearSerializer(read_only=True, source="fical_year")
-    documents = PalikaProgramDocumentSerializer(
-        many=True, read_only=True, source="program_documents"
-    )
 
     class Meta:
         model = PalikaProgram
+        fields = "__all__"
+
+
+class PalikaProgramDocumentSerializer(serializers.ModelSerializer):
+    """
+    Serializer for PalikaProgramDocument model.
+    """
+
+    palika_program = LocalGovProgramSerializer(read_only=True)
+    organization = LocalGovernmentSerializer(
+        read_only=True, source="palika_program.local_government"
+    )
+
+    class Meta:
+        model = PalikaProgramDocument
         fields = "__all__"

@@ -13,6 +13,7 @@ from palikadata.views.local_gov_programs import (
     ProgramApprovalAPIView,
     ProgramDocumentView,
 )
+from palikadata.views.palika_karmachari import PalikaKarmachariAPIView
 from palikadata.views.sakha import PalikaSakhaViewSet
 
 router = DefaultRouter()
@@ -48,6 +49,8 @@ urlpatterns = [
         PalikaProgramStatsAPIView.as_view(),
         name="dashboard",
     ),
+    path("karmachari/", PalikaKarmachariAPIView.as_view()),  # POST to add
+    path("karmachari/<int:pk>/", PalikaKarmachariAPIView.as_view()),  # PUT to update
 ]
 
 

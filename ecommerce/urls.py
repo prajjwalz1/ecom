@@ -25,6 +25,7 @@ from . import views
 
 urlpatterns = [
     path("", views.server_health_status),
+    path("api/users/", include("user.urls")),
     path("admin/", admin.site.urls),
     path("product/", include("product.urls")),
     path(

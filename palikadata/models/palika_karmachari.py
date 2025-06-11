@@ -40,5 +40,14 @@ class PalikaKarmachari(CustomizedModel):
         default=False, help_text="Indicates if the karmachari is a Karyalaya Pramukh."
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "palika"],
+                condition=models.Q(is_active=True),
+                name="unique_active_user_palika",
+            )
+        ]
+
     def __str__(self):
         return self.user.first_name if self.user.first_name else str(None)

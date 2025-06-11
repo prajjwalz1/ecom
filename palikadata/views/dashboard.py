@@ -16,20 +16,20 @@ from palikadata.models.palika_karmachari import (
 )
 from palikadata.models.palika_program import FiscalYear  # Adjust import paths as needed
 from palikadata.models.palika_program import PalikaProgram
+from palikadata.permissions.org_staff import IsSamePalikaKarmachari
 from palikadata.utils.current_fiscal_year import (
     get_current_bs_year,  # Adjust import paths as needed
 )
 
 
 class PalikaProgramStatsAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsSamePalikaKarmachari]
     authentication_classes = [JWT]
 
     def get_total_budget_allocation(self, palika):
 
         # Assuming fiscal year starts on Shrawan 1 (mid-July), adjust as per your calendar
         fiscal_year = get_current_bs_year()
-        print(fiscal_year, "fiscal yuear")
         fiscal_year_id = FiscalYear.objects.filter(
             year=fiscal_year,
         ).first()

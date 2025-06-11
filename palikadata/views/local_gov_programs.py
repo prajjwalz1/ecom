@@ -56,11 +56,11 @@ class GovernmentProgramAPIView(ResponseMixin, OrgDeptQuerysetMixin, APIView):
                 error_message="Local Government ID is required to retrieve programs.",
             )
 
-        pk = kwargs.get("pk")
+        program_id = request.query_params.get("program_id")
 
-        if pk:
+        if program_id:
             try:
-                instance = get_object_or_404(PalikaProgram, pk=pk)
+                instance = get_object_or_404(PalikaProgram, pk=program_id)
 
                 program_sakha_id = getattr(instance, "related_sakha_id", None)
                 karmachari_sakha_id = self.get_user_sakha_id(request.user)
@@ -95,11 +95,11 @@ class GovernmentProgramAPIView(ResponseMixin, OrgDeptQuerysetMixin, APIView):
 
         # List view
         sakha_id = request.query_params.get("sakha_id")
-        if not sakha_id:
-            return self.handle_error_response(
-                status_code=400,
-                error_message="Please provide the Sakha ID to retrieve programs.",
-            )
+        # if not sakha_id:
+        #     return self.handle_error_response(
+        #         status_code=400,
+        #         error_message="Please provide the Sakha ID to retrieve programs.",
+        #     )
 
         # Sakha permission check
         karmachari_sakha_id = self.get_user_sakha_id(request.user)
@@ -268,44 +268,51 @@ class ProgramDocumentView(ResponseMixin, OrgDeptQuerysetMixin, APIView):
     A viewset for handling program documents, with search feature.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsSamePalikaKarmachari]
     authentication_classes = [JWT]  # Use default authentication
 
     def get(self, request):
         try:
             palika_program_id = request.query_params.get("palika_program_id")
             search_query = request.query_params.get("search", "").strip()
+            karmachari = request.user.karmachari_details.first()
+            user_org_id = getattr(karmachari, "palika", None).id
+            user_sakha_id = getattr(karmachari, "palika_sakha", None)
+            user_sakha_id = user_sakha_id.id if user_sakha_id else None
 
-            if not palika_program_id:
+            if not user_org_id:
                 return self.handle_error_response(
                     status_code=400,
-                    error_message="Palika Program ID is required.",
+                    error_message="User does not have a valid organization.",
                 )
 
-            palika_program_docs = PalikaProgramDocument.objects.filter(
-                palika_program__id=palika_program_id
-            )
+            queryset = PalikaProgramDocument.objects.all()
 
-            # Apply search filter if search_query is provided
+            if karmachari.is_admin:
+                # Admin: fetch all documents for all programs of the local government
+                queryset = queryset.filter(organization=user_org_id)
+                if palika_program_id:
+                    queryset = queryset.filter(palika_program_id=palika_program_id)
+            else:
+                # Non-admin: fetch only documents for programs user is associated to (org + sakha)
+                queryset = queryset.filter(
+                    organization=user_org_id,
+                    department=user_sakha_id,
+                )
+                if palika_program_id:
+                    queryset = queryset.filter(palika_program_id=palika_program_id)
+
             if search_query:
-                palika_program_docs = palika_program_docs.filter(
-                    name__icontains=search_query
-                )
+                queryset = queryset.filter(name__icontains=search_query)
 
-            filtered_queryset = self.get_filtered_queryset(palika_program_docs)
-
+            self.paginator = StandardResultsSetPagination()
+            page = self.paginator.paginate_queryset(queryset, request)
             serializer = PalikaProgramDocumentSerializer(
-                filtered_queryset, many=True, context={"request": request}
+                page, many=True, context={"request": request}
             )
-            return self.handle_success_response(
-                status_code=200,
-                serialized_data=serializer.data,
+            return self.get_paginated_response_with_custom_format(
+                data=serializer.data,
                 message="Documents fetched successfully",
-            )
-        except PalikaProgram.DoesNotExist:
-            return self.handle_error_response(
-                status_code=404,
-                error_message="Palika Program not found.",
             )
         except Exception as e:
             return self.handle_error_response(

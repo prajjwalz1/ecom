@@ -18,7 +18,7 @@ class PalikaSakhaViewSet(ResponseMixin, viewsets.ModelViewSet):
 
     pagination_class = StandardResultsSetPagination
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request):
 
         palika_id = request.data.get("local_government")
         if palika_id:
@@ -45,7 +45,16 @@ class PalikaSakhaViewSet(ResponseMixin, viewsets.ModelViewSet):
                 status_code=403,
                 error_message="only admin can create the sakha.",
             )
-        serializer = self.get_serializer(data=request.data)
+        # Copy request data and replace 'local_government' with 'palika'
+        new_data = request.data.copy()
+        if "local_government" in new_data:
+            # Ensure palika is a single pk value, not a list
+            local_government_value = new_data.pop("local_government")
+            if isinstance(local_government_value, list):
+                new_data["palika"] = local_government_value[0] if local_government_value else None
+            else:
+                new_data["palika"] = local_government_value
+        serializer = self.get_serializer(data=new_data)
         if not serializer.is_valid():
             return self.handle_serializererror_response(
                 serializer.errors, status_code=400

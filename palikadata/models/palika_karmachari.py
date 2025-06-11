@@ -36,6 +36,9 @@ class PalikaKarmachari(CustomizedModel):
         null=True,
         blank=True,
     )
+    is_karyalaya_pramukh = models.BooleanField(
+        default=False, help_text="Indicates if the karmachari is a Karyalaya Pramukh."
+    )
 
     def __str__(self):
         return self.user.first_name if self.user.first_name else str(None)

@@ -93,7 +93,7 @@ class PalikaProgram(CustomizedModel):
         null=True,
         blank=True,
     )
-    fical_year = models.ForeignKey(
+    fiscal_year = models.ForeignKey(
         FiscalYear,
         on_delete=models.PROTECT,
         related_name="fiscal_year_programs",

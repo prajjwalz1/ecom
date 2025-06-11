@@ -3,6 +3,7 @@ from django.conf.urls.static import static
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
+from palikadata.views.dashboard import PalikaProgramStatsAPIView
 from palikadata.views.distribution_document import DistributionDocumentViewSet
 from palikadata.views.distribution_item import DistributionItemViewSet
 from palikadata.views.distribution_record import DistributionRecordViewSet
@@ -43,9 +44,9 @@ urlpatterns = [
         name="palika_programs",
     ),
     path(
-        "programs/<int:pk>/",
-        GovernmentProgramAPIView.as_view(),
-        name="palika_programs",
+        "dashboard",
+        PalikaProgramStatsAPIView.as_view(),
+        name="dashboard",
     ),
 ]
 

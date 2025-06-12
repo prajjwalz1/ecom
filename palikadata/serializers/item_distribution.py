@@ -1,10 +1,6 @@
 from rest_framework import serializers
 
-from palikadata.models.distribution import (
-    DistributionDocument,
-    DistributionItem,
-    DistributionRecord,
-)
+from palikadata.models.record import DistributionDocument, LocalResident, Records
 
 
 class DistributionItemSerializer(serializers.ModelSerializer):
@@ -13,7 +9,7 @@ class DistributionItemSerializer(serializers.ModelSerializer):
     """
 
     class Meta:
-        model = DistributionItem
+        model = Records
         fields = "__all__"
 
 
@@ -33,5 +29,5 @@ class DistributionRecordSerializer(serializers.ModelSerializer):
     """
 
     class Meta:
-        model = DistributionRecord
+        model = Records
         fields = "__all__"

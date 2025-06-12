@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 
 from palikadata.mixins.response_mixin import ResponseMixin
-from palikadata.models.distribution import DistributionItem
+from palikadata.models.record import Records
 from palikadata.serializers.item_distribution import DistributionItemSerializer
 
 
@@ -10,7 +10,7 @@ class DistributionItemViewSet(viewsets.ModelViewSet, ResponseMixin):
     A viewset for viewing and editing PalikaData instances.
     """
 
-    queryset = DistributionItem.objects.all()
+    queryset = Records.objects.all()
     serializer_class = DistributionItemSerializer
 
     def list(self, request, *args, **kwargs):

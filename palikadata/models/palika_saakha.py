@@ -27,10 +27,11 @@ class PalikaSakha(CustomizedModel):
     )
 
     class Meta:
-        unique_together = ('palika', 'name')
+        unique_together = ("palika", "name")
 
     def __str__(self):
         return self.name if self.name else str(None)
+
 
 class PalikaSakhaPramukhHistory(CustomizedModel):
     """

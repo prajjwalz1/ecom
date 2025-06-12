@@ -25,7 +25,6 @@ class CustomTokenObtainView(APIView, ResponseMixin):
 
     def post(self, request, *args, **kwargs):
         # Serialize incoming data
-        print(request.data)
         serializer = CustomAuthTokenSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data["email"]
@@ -36,7 +35,8 @@ class CustomTokenObtainView(APIView, ResponseMixin):
                 user = User.objects.get(email=email)
             except Exception as e:
                 return self.handle_error_response(
-                    error_message="no user found with the given email", status_code=400
+                    error_message=f"no user found with the given email{e}",
+                    status_code=400,
                 )
 
             if not user.check_password(password):

@@ -6,6 +6,13 @@ from palikadata.models.residents import LocalResident
 from palikadata.models.ward import Ward
 
 
+class ActionType(CustomizedModel):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
 class DistributionItem(CustomizedModel):
     under_program = models.ForeignKey(
         "PalikaProgram", on_delete=models.CASCADE, related_name="distribution_items"
@@ -28,14 +35,16 @@ class DistributionDocument(CustomizedModel):
         return self.document_name
 
 
-class DistributionRecord(CustomizedModel):
-    under_program = models.ForeignKey(
+class Records(CustomizedModel):
+    action = models.ForeignKey(
+        ActionType, on_delete=models.PROTECT, related_name="distribution_records"
+    )
+    program = models.ForeignKey(
         "PalikaProgram", on_delete=models.CASCADE, related_name="distribution_records"
     )
-    distribution_type = models.CharField(
-        choices=(("family", "family"), ("ward", "ward"), (("samiti", "samiti"))),
-        max_length=10,
-    )
+
+    extra_data = models.JSONField(blank=True, null=True)
+
     local_government = models.ForeignKey(
         LocalGovernment, on_delete=models.PROTECT, related_name="distributions"
     )
@@ -48,9 +57,7 @@ class DistributionRecord(CustomizedModel):
     item = models.ForeignKey(DistributionItem, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField(default=1)
     notes = models.TextField(blank=True, null=True)
-    distribution_date = models.DateField(
-        blank=True, null=True
-    )  # Date when the distribution took place
+    distribution_date = models.DateField(blank=True, null=True)
     distribution_document = models.ForeignKey(
         DistributionDocument,
         on_delete=models.PROTECT,

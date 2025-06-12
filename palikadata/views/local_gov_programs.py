@@ -13,6 +13,7 @@ from palikadata.permissions.org_staff import IsSamePalikaKarmachari
 from palikadata.serializers.palika_program import (
     LocalGovProgramSerializer,
     PalikaProgramDocumentSerializer,
+    PalikaProgramDocumentUploadSerializer,
 )
 
 
@@ -373,7 +374,6 @@ class ProgramDocumentView(ResponseMixin, OrgDeptQuerysetMixin, APIView):
 
             created_docs = []
             errors = []
-
             for file in files:
                 data = {
                     "name": file.name,
@@ -382,7 +382,7 @@ class ProgramDocumentView(ResponseMixin, OrgDeptQuerysetMixin, APIView):
                     "department": user_sakha_id,
                     "palika_program": palika_program.id,
                 }
-                serializer = PalikaProgramDocumentSerializer(
+                serializer = PalikaProgramDocumentUploadSerializer(
                     data=data, context={"request": request}
                 )
                 if serializer.is_valid():

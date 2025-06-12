@@ -32,9 +32,17 @@ class PalikaProgramDocumentSerializer(serializers.ModelSerializer):
     """
 
     palika_program = LocalGovProgramSerializer(read_only=True)
-    organization = LocalGovernmentSerializer(
-        read_only=True, source="palika_program.local_government"
-    )
+    organization = LocalGovernmentSerializer(source="palika_program.local_government")
+
+    class Meta:
+        model = PalikaProgramDocument
+        fields = "__all__"
+
+
+class PalikaProgramDocumentUploadSerializer(serializers.ModelSerializer):
+    """
+    Serializer for PalikaProgramDocument model.
+    """
 
     class Meta:
         model = PalikaProgramDocument

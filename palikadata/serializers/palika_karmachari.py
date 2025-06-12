@@ -18,3 +18,10 @@ class PalikaKarmachariSerializer(serializers.ModelSerializer):
     class Meta:
         model = PalikaKarmachari
         fields = "__all__"
+
+
+class PalikaKarmachariAssignSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PalikaKarmachari
+        fields = "__all__"

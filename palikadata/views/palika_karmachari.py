@@ -10,7 +10,10 @@ from palikadata.pagination import (
     StandardResultsSetPagination,  # adjust the import path accordingly
 )
 from palikadata.permissions.org_staff import IsPalikaAdmin, IsSamePalikaKarmachari
-from palikadata.serializers.palika_karmachari import PalikaKarmachariSerializer
+from palikadata.serializers.palika_karmachari import (
+    PalikaKarmachariAssignSerializer,
+    PalikaKarmachariSerializer,
+)
 
 
 class PalikaKarmachariAPIView(APIView, ResponseMixin):
@@ -43,7 +46,7 @@ class PalikaKarmachariAPIView(APIView, ResponseMixin):
         )
 
     def post(self, request):
-        serializer = PalikaKarmachariSerializer(data=request.data)
+        serializer = PalikaKarmachariAssignSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(

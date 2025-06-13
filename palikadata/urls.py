@@ -45,6 +45,11 @@ urlpatterns = [
         name="palika_programs",
     ),
     path(
+        "programs/<int:pk>",
+        GovernmentProgramAPIView.as_view(),
+        name="palika_programs",
+    ),
+    path(
         "dashboard",
         PalikaProgramStatsAPIView.as_view(),
         name="dashboard",

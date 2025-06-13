@@ -22,13 +22,22 @@ from .serializers import (
 
 class CustomUserViewSet(ResponseMixin, viewsets.ModelViewSet):
     authentication_classes = [JWT]
-    permission_classes = [permissions.IsAuthenticated, IsSamePalikaKarmachari]
+    permission_classes = [IsSamePalikaKarmachari]
     serializer_class = UserSerializer
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        # Only expose users created by this requester
-        return CustomUser.objects.filter(created_by=self.request.user)
+        # Get the requesting user's palika (if they are a PalikaKarmachari)
+        local_gov_id = self.request.GET.get("local_government")
+
+        if not local_gov_id:
+            return CustomUser.objects.none()
+
+        # Filter users who are linked to a PalikaKarmachari in the same palika
+        return CustomUser.objects.filter(
+            karmachari_details__palika_id=local_gov_id,
+            karmachari_details__is_active=True,
+        ).distinct()
 
     # ─── LIST ───────────────────────────────────────────────────────────────────
     def list(self, request, *args, **kwargs):
@@ -63,34 +72,45 @@ class CustomUserViewSet(ResponseMixin, viewsets.ModelViewSet):
         )
 
     # ─── UPDATE (PUT) ───────────────────────────────────────────────────────────
-    def update(self, request, *args, **kwargs):
+
+    def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        ser = self.get_serializer(instance, data=request.data)
-        if ser.is_valid():
-            ser.save()  # created_by remains untouched
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            password = request.data.get("password", None)
+            if password:
+                instance.set_password(password)
+                instance.save()
+                # Remove password from validated_data so serializer.save() won't overwrite it
+                serializer.validated_data.pop("password", None)
+
+            serializer.save()  # saves other fields except password now
+
             return self.handle_success_response(
                 status.HTTP_200_OK,
-                ser.data,
+                serializer.data,
                 message="User updated successfully",
             )
+
         return self.handle_serializererror_response(
-            ser.errors, status.HTTP_400_BAD_REQUEST
+            serializer.errors, status.HTTP_400_BAD_REQUEST
         )
 
     # ─── PARTIAL UPDATE (PATCH) ─────────────────────────────────────────────────
-    def partial_update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        ser = self.get_serializer(instance, data=request.data, partial=True)
-        if ser.is_valid():
-            ser.save()
-            return self.handle_success_response(
-                status.HTTP_200_OK,
-                ser.data,
-                message="User partially updated successfully",
-            )
-        return self.handle_serializererror_response(
-            ser.errors, status.HTTP_400_BAD_REQUEST
-        )
+    # def partial_update(self, request, *args, **kwargs):
+    #     instance = self.get_object()
+    #     ser = self.get_serializer(instance, data=request.data, partial=True)
+    #     if ser.is_valid():
+    #         ser.save()
+    #         return self.handle_success_response(
+    #             status.HTTP_200_OK,
+    #             ser.data,
+    #             message="User partially updated successfully",
+    #         )
+    #     return self.handle_serializererror_response(
+    #         ser.errors, status.HTTP_400_BAD_REQUEST
+    #     )
 
     # ─── DESTROY ───────────────────────────────────────────────────────────────
     def destroy(self, request, *args, **kwargs):

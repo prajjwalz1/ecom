@@ -146,7 +146,7 @@ class GovernmentProgramAPIView(ResponseMixin, OrgDeptQuerysetMixin, APIView):
             error_message=serializer.errors,
         )
 
-    def put(self, request, *args, **kwargs):
+    def patch(self, request, *args, **kwargs):
         pk = kwargs.get("pk")
         if not pk:
             return self.handle_error_response(
